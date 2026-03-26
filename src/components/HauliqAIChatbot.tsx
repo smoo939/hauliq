@@ -186,49 +186,6 @@ export default function HauliqAIChatbot() {
 
   if (!user) return null;
 
-  const handleSend = useCallback(async (text?: string) => {
-    const msgText = text || input.trim();
-    if (!msgText || loading) return;
-
-    const userMsg: Message = { role: 'user', content: msgText };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setInput('');
-    setLoading(true);
-    setShowSuggestions(false);
-
-    let assistantSoFar = '';
-    const upsertAssistant = (chunk: string) => {
-      assistantSoFar += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'assistant') {
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-        }
-        return [...prev, { role: 'assistant', content: assistantSoFar }];
-      });
-    };
-
-    try {
-      await streamChat({
-        messages: newMessages,
-        userContext: {
-          role: profile?.role,
-          userId: user.id,
-          fullName: profile?.full_name,
-        },
-        onDelta: upsertAssistant,
-        onDone: () => setLoading(false),
-        onError: (errMsg) => {
-          setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errMsg}` }]);
-          setLoading(false);
-        },
-      });
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Connection error. Please try again.' }]);
-      setLoading(false);
-    }
-  }, [input, loading, messages, profile, user]);
 
   return (
     <>
