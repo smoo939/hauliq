@@ -52,6 +52,72 @@ export type Database = {
           },
         ]
       }
+      driver_verifications: {
+        Row: {
+          created_at: string
+          id: string
+          id_status: string
+          license_expiry: string | null
+          license_name: string | null
+          license_number: string | null
+          license_status: string
+          license_url: string | null
+          national_id_name: string | null
+          national_id_number: string | null
+          national_id_url: string | null
+          overall_status: string
+          rejection_reason: string | null
+          selfie_match_score: number | null
+          selfie_status: string
+          selfie_url: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          id_status?: string
+          license_expiry?: string | null
+          license_name?: string | null
+          license_number?: string | null
+          license_status?: string
+          license_url?: string | null
+          national_id_name?: string | null
+          national_id_number?: string | null
+          national_id_url?: string | null
+          overall_status?: string
+          rejection_reason?: string | null
+          selfie_match_score?: number | null
+          selfie_status?: string
+          selfie_url?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          id_status?: string
+          license_expiry?: string | null
+          license_name?: string | null
+          license_number?: string | null
+          license_status?: string
+          license_url?: string | null
+          national_id_name?: string | null
+          national_id_number?: string | null
+          national_id_url?: string | null
+          overall_status?: string
+          rejection_reason?: string | null
+          selfie_match_score?: number | null
+          selfie_status?: string
+          selfie_url?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       loads: {
         Row: {
           accepted_at: string | null
@@ -264,6 +330,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      truck_verifications: {
+        Row: {
+          created_at: string
+          id: string
+          insurance_expiry: string | null
+          insurance_number: string | null
+          insurance_status: string
+          insurance_url: string | null
+          overall_status: string
+          photo_status: string
+          plate_from_photo: string | null
+          reg_status: string
+          registration_expiry: string | null
+          registration_number: string | null
+          registration_url: string | null
+          rejection_reason: string | null
+          truck_label: string | null
+          truck_photo_url: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insurance_expiry?: string | null
+          insurance_number?: string | null
+          insurance_status?: string
+          insurance_url?: string | null
+          overall_status?: string
+          photo_status?: string
+          plate_from_photo?: string | null
+          reg_status?: string
+          registration_expiry?: string | null
+          registration_number?: string | null
+          registration_url?: string | null
+          rejection_reason?: string | null
+          truck_label?: string | null
+          truck_photo_url?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insurance_expiry?: string | null
+          insurance_number?: string | null
+          insurance_status?: string
+          insurance_url?: string | null
+          overall_status?: string
+          photo_status?: string
+          plate_from_photo?: string | null
+          reg_status?: string
+          registration_expiry?: string | null
+          registration_number?: string | null
+          registration_url?: string | null
+          rejection_reason?: string | null
+          truck_label?: string | null
+          truck_photo_url?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
