@@ -76,7 +76,7 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
     case 'fleet':
       return <FleetManagement onBack={back} />;
     case 'verification':
-      return <VerificationCenter onBack={back} />;
+      return <VerificationCenterComponent onBack={back} />;
     case 'documents':
       return <DocumentVault onBack={back} />;
     case 'notifications':
