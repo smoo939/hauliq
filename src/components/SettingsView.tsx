@@ -13,6 +13,14 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LoadHistoryView from './LoadHistoryView';
+import NotificationsSettings from './settings/NotificationsSettings';
+import SecuritySettings from './settings/SecuritySettings';
+import PreferredRoutes from './settings/PreferredRoutes';
+import RatingsView from './settings/RatingsView';
+import ShippingPreferences from './settings/ShippingPreferences';
+import PaymentMethods from './settings/PaymentMethods';
+import HelpSupport from './settings/HelpSupport';
+import AboutView from './settings/AboutView';
 
 interface SettingItemProps {
   icon: React.ElementType;
@@ -52,29 +60,41 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
     navigate('/auth', { replace: true });
   };
 
-  if (activeSection === 'history') {
-    return (
-      <div className="space-y-4">
-        <button onClick={() => setActiveSection(null)} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-          ← Back to Settings
-        </button>
-        <h2 className="text-lg font-semibold">Load History</h2>
-        <p className="text-xs text-muted-foreground">All your completed deliveries</p>
-        <LoadHistoryView role={role} />
-      </div>
-    );
-  }
+  const back = () => setActiveSection(null);
 
-  if (activeSection === 'fleet') {
-    return <FleetManagement role={role} onBack={() => setActiveSection(null)} />;
-  }
-
-  if (activeSection === 'verification') {
-    return <VerificationCenter onBack={() => setActiveSection(null)} />;
-  }
-
-  if (activeSection === 'documents') {
-    return <DocumentVault onBack={() => setActiveSection(null)} />;
+  // Sub-section routing
+  switch (activeSection) {
+    case 'history':
+      return (
+        <div className="space-y-4">
+          <button onClick={back} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
+          <h2 className="text-lg font-semibold">Load History</h2>
+          <p className="text-xs text-muted-foreground">All your completed deliveries</p>
+          <LoadHistoryView role={role} />
+        </div>
+      );
+    case 'fleet':
+      return <FleetManagement onBack={back} />;
+    case 'verification':
+      return <VerificationCenter onBack={back} />;
+    case 'documents':
+      return <DocumentVault onBack={back} />;
+    case 'notifications':
+      return <NotificationsSettings onBack={back} />;
+    case 'security':
+      return <SecuritySettings onBack={back} />;
+    case 'routes':
+      return <PreferredRoutes onBack={back} />;
+    case 'ratings':
+      return <RatingsView onBack={back} role={role} />;
+    case 'shipping-prefs':
+      return <ShippingPreferences onBack={back} />;
+    case 'payments':
+      return <PaymentMethods onBack={back} />;
+    case 'help':
+      return <HelpSupport onBack={back} />;
+    case 'about':
+      return <AboutView onBack={back} />;
   }
 
   return (
@@ -114,10 +134,7 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
               label="Dark Mode"
               description={resolvedTheme === 'dark' ? 'Currently dark' : 'Currently light'}
               trailing={
-                <Switch
-                  checked={resolvedTheme === 'dark'}
-                  onCheckedChange={checked => setTheme(checked ? 'dark' : 'light')}
-                />
+                <Switch checked={resolvedTheme === 'dark'} onCheckedChange={checked => setTheme(checked ? 'dark' : 'light')} />
               }
             />
           </CardContent>
@@ -131,29 +148,21 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3.5 pt-2 pb-1">
               {role === 'driver' ? 'Carrier Tools' : 'Shipper Tools'}
             </p>
-
-            {/* Shared: Load History */}
-            <SettingItem
-              icon={History}
-              label="Load History"
-              description="View all completed deliveries"
-              onClick={() => setActiveSection('history')}
-            />
-
+            <SettingItem icon={History} label="Load History" description="View all completed deliveries" onClick={() => setActiveSection('history')} />
             {role === 'driver' ? (
               <>
                 <SettingItem icon={Truck} label="My Fleet" description="Vehicles, trailers & capacity" onClick={() => setActiveSection('fleet')} />
                 <SettingItem icon={Shield} label="Verification Center" description="ZIMRA, GIT & operator licenses" onClick={() => setActiveSection('verification')} />
                 <SettingItem icon={FileText} label="Document Vault" description="POD uploads & delivery receipts" onClick={() => setActiveSection('documents')} />
-                <SettingItem icon={MapPin} label="Preferred Routes" description="Set your common corridors" />
-                <SettingItem icon={Star} label="Ratings & Reviews" description="Your performance score" />
+                <SettingItem icon={MapPin} label="Preferred Routes" description="Set your common corridors" onClick={() => setActiveSection('routes')} />
+                <SettingItem icon={Star} label="Ratings & Reviews" description="Your performance score" onClick={() => setActiveSection('ratings')} />
               </>
             ) : (
               <>
-                <SettingItem icon={Package} label="Shipping Preferences" description="Default load types & equipment" />
-                <SettingItem icon={CreditCard} label="Payment Methods" description="EcoCash, bank transfer & cash" />
+                <SettingItem icon={Package} label="Shipping Preferences" description="Default load types & equipment" onClick={() => setActiveSection('shipping-prefs')} />
+                <SettingItem icon={CreditCard} label="Payment Methods" description="EcoCash, bank transfer & cash" onClick={() => setActiveSection('payments')} />
                 <SettingItem icon={FileText} label="Document Vault" description="POD downloads & invoices" onClick={() => setActiveSection('documents')} />
-                <SettingItem icon={Star} label="Carrier Ratings" description="Rate your carriers" />
+                <SettingItem icon={Star} label="Carrier Ratings" description="Rate your carriers" onClick={() => setActiveSection('ratings')} />
               </>
             )}
           </CardContent>
@@ -165,10 +174,10 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
         <Card>
           <CardContent className="p-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3.5 pt-2 pb-1">Account</p>
-            <SettingItem icon={Bell} label="Notifications" description="Push & SMS preferences" />
-            <SettingItem icon={Lock} label="Security" description="Password & 2FA" />
-            <SettingItem icon={HelpCircle} label="Help & Support" />
-            <SettingItem icon={Info} label="About Hauliq" description="v1.0.0" />
+            <SettingItem icon={Bell} label="Notifications" description="Push & SMS preferences" onClick={() => setActiveSection('notifications')} />
+            <SettingItem icon={Lock} label="Security" description="Password & 2FA" onClick={() => setActiveSection('security')} />
+            <SettingItem icon={HelpCircle} label="Help & Support" onClick={() => setActiveSection('help')} />
+            <SettingItem icon={Info} label="About Hauliq" description="v1.0.0" onClick={() => setActiveSection('about')} />
           </CardContent>
         </Card>
       </motion.div>
@@ -180,13 +189,11 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
   );
 }
 
-// Sub-sections
-function FleetManagement({ role, onBack }: { role: string; onBack: () => void }) {
+// Sub-sections kept inline for fleet/verification/documents
+function FleetManagement({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-        ← Back to Settings
-      </button>
+      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
       <h2 className="text-lg font-semibold">My Fleet</h2>
       <Card>
         <CardContent className="p-5">
@@ -211,12 +218,9 @@ function VerificationCenter({ onBack }: { onBack: () => void }) {
     { name: 'Vehicle Fitness Certificate', status: 'pending', type: 'fitness' },
     { name: 'Operators License', status: 'pending', type: 'license' },
   ];
-
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-        ← Back to Settings
-      </button>
+      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
       <h2 className="text-lg font-semibold">Verification Center</h2>
       <p className="text-xs text-muted-foreground">Upload required documents for ZIMRA and insurance verification</p>
       {documents.map((doc, i) => (
@@ -229,9 +233,7 @@ function VerificationCenter({ onBack }: { onBack: () => void }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium">{doc.name}</p>
-                  <Badge variant="outline" className="text-xs mt-0.5 text-warning border-warning/30">
-                    {doc.status}
-                  </Badge>
+                  <Badge variant="outline" className="text-xs mt-0.5 text-warning border-warning/30">{doc.status}</Badge>
                 </div>
               </div>
               <Button size="sm" variant="outline">Upload</Button>
@@ -246,9 +248,7 @@ function VerificationCenter({ onBack }: { onBack: () => void }) {
 function DocumentVault({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-        ← Back to Settings
-      </button>
+      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
       <h2 className="text-lg font-semibold">Document Vault</h2>
       <p className="text-xs text-muted-foreground">Securely store and manage Proof of Delivery (POD) and other logistics documents</p>
       <Card>
