@@ -14,16 +14,290 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bids: {
+        Row: {
+          amount: number
+          created_at: string
+          driver_id: string
+          id: string
+          load_id: string
+          note: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          driver_id: string
+          id?: string
+          load_id: string
+          note?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          driver_id?: string
+          id?: string
+          load_id?: string
+          note?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: false
+            referencedRelation: "loads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loads: {
+        Row: {
+          accepted_at: string | null
+          completed_at: string | null
+          created_at: string
+          delivery_location: string
+          description: string | null
+          driver_id: string | null
+          equipment_type: string | null
+          id: string
+          load_type: string | null
+          payment_method: string | null
+          pickup_date: string | null
+          pickup_location: string
+          platform_fee: number | null
+          price: number | null
+          shipper_id: string
+          status: string
+          title: string
+          updated_at: string
+          weight_lbs: number | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          delivery_location: string
+          description?: string | null
+          driver_id?: string | null
+          equipment_type?: string | null
+          id?: string
+          load_type?: string | null
+          payment_method?: string | null
+          pickup_date?: string | null
+          pickup_location: string
+          platform_fee?: number | null
+          price?: number | null
+          shipper_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          weight_lbs?: number | null
+        }
+        Update: {
+          accepted_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          delivery_location?: string
+          description?: string | null
+          driver_id?: string | null
+          equipment_type?: string | null
+          id?: string
+          load_type?: string | null
+          payment_method?: string | null
+          pickup_date?: string | null
+          pickup_location?: string
+          platform_fee?: number | null
+          price?: number | null
+          shipper_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          weight_lbs?: number | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          load_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          load_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          load_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: false
+            referencedRelation: "loads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          load_id: string | null
+          read: boolean | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          load_id?: string | null
+          read?: boolean | null
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          load_id?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: false
+            referencedRelation: "loads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          role: string | null
+          updated_at: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          load_id: string
+          rating: number
+          reviewed_id: string
+          reviewer_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          load_id: string
+          rating: number
+          reviewed_id: string
+          reviewer_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          load_id?: string
+          rating?: number
+          reviewed_id?: string
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: false
+            referencedRelation: "loads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user" | "shipper" | "driver"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +424,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user", "shipper", "driver"],
+    },
   },
 } as const
