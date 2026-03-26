@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { LogIn, UserPlus, Eye, EyeOff, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { lovable } from '@/integrations/lovable/index';
+import { Separator } from '@/components/ui/separator';
 
 export default function AuthPage() {
   const { user, signIn, signUp } = useAuth();
