@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, User, Check, X } from 'lucide-react';
+import { DollarSign, User, Check, X, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BidFormProps {
@@ -13,15 +13,35 @@ interface BidFormProps {
 }
 
 export function BidForm({ loadId }: BidFormProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
+  // Check verification status for drivers
+  const { data: driverVerif } = useQuery({
+    queryKey: ['driver-verification-status', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('driver_verifications')
+        .select('overall_status')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user && profile?.role === 'driver',
+  });
+
+  const isVerified = profile?.verified || driverVerif?.overall_status === 'verified';
+
   const handleSubmit = async () => {
     if (!amount || !user) return;
+    if (!isVerified) {
+      toast.error('You must complete verification before bidding. Go to Settings → Verification Center.');
+      return;
+    }
     setSubmitting(true);
     try {
       const { error } = await supabase.from('bids').insert({
@@ -44,6 +64,13 @@ export function BidForm({ loadId }: BidFormProps) {
   };
 
   if (!showForm) {
+    if (!isVerified && profile?.role === 'driver') {
+      return (
+        <Button size="sm" variant="outline" className="text-warning border-warning/30" disabled>
+          <ShieldAlert className="mr-1.5 h-3.5 w-3.5" /> Verify to Bid
+        </Button>
+      );
+    }
     return (
       <Button size="sm" variant="default" onClick={() => setShowForm(true)}>
         <DollarSign className="mr-1.5 h-3.5 w-3.5" /> Place Bid
