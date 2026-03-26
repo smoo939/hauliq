@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Send, Sparkles, Loader2, Truck, Package, HelpCircle, TrendingUp, Search, DollarSign, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles, Truck, Package, HelpCircle, TrendingUp, Search, DollarSign, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
@@ -233,7 +233,7 @@ export default function HauliqAIChatbot() {
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             </div>
 
@@ -271,8 +271,13 @@ export default function HauliqAIChatbot() {
 
               {loading && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-2">
+                    <span className="flex gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
+                    </span>
+                    <span className="text-xs text-muted-foreground">Hauliq AI is responding...</span>
                   </div>
                 </div>
               )}
