@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LoadHistoryView from './LoadHistoryView';
+import VerificationCenterComponent from './VerificationCenter';
 import NotificationsSettings from './settings/NotificationsSettings';
 import SecuritySettings from './settings/SecuritySettings';
 import PreferredRoutes from './settings/PreferredRoutes';
