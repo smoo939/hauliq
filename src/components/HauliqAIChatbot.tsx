@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Send, Sparkles, Loader2, Truck, Package, HelpCircle, TrendingUp, Search, DollarSign, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles, Truck, Package, HelpCircle, TrendingUp, Search, DollarSign, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
