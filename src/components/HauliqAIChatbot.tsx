@@ -140,6 +140,50 @@ export default function HauliqAIChatbot() {
     ? `Hey ${profile?.full_name?.split(' ')[0] || 'driver'}! I can help you find loads, bid smarter, and navigate SADC corridors. What do you need?`
     : `Hi ${profile?.full_name?.split(' ')[0] || 'there'}! I can help you post loads, review bids, and get market pricing. How can I help?`;
 
+  const handleSend = useCallback(async (text?: string) => {
+    const msgText = text || input.trim();
+    if (!msgText || loading) return;
+
+    const userMsg: Message = { role: 'user', content: msgText };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput('');
+    setLoading(true);
+    setShowSuggestions(false);
+
+    let assistantSoFar = '';
+    const upsertAssistant = (chunk: string) => {
+      assistantSoFar += chunk;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant') {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+        }
+        return [...prev, { role: 'assistant', content: assistantSoFar }];
+      });
+    };
+
+    try {
+      await streamChat({
+        messages: newMessages,
+        userContext: {
+          role: profile?.role,
+          userId: user?.id,
+          fullName: profile?.full_name,
+        },
+        onDelta: upsertAssistant,
+        onDone: () => setLoading(false),
+        onError: (errMsg) => {
+          setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errMsg}` }]);
+          setLoading(false);
+        },
+      });
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Connection error. Please try again.' }]);
+      setLoading(false);
+    }
+  }, [input, loading, messages, profile, user]);
+
   if (!user) return null;
 
   const handleSend = useCallback(async (text?: string) => {
