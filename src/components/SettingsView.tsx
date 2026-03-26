@@ -212,39 +212,7 @@ function FleetManagement({ onBack }: { onBack: () => void }) {
   );
 }
 
-function VerificationCenter({ onBack }: { onBack: () => void }) {
-  const documents = [
-    { name: 'ZIMRA Tax Clearance', status: 'pending', type: 'tax' },
-    { name: 'GIT Insurance Certificate', status: 'pending', type: 'insurance' },
-    { name: 'Vehicle Fitness Certificate', status: 'pending', type: 'fitness' },
-    { name: 'Operators License', status: 'pending', type: 'license' },
-  ];
-  return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
-      <h2 className="text-lg font-semibold">Verification Center</h2>
-      <p className="text-xs text-muted-foreground">Upload required documents for ZIMRA and insurance verification</p>
-      {documents.map((doc, i) => (
-        <motion.div key={doc.type} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{doc.name}</p>
-                  <Badge variant="outline" className="text-xs mt-0.5 text-warning border-warning/30">{doc.status}</Badge>
-                </div>
-              </div>
-              <Button size="sm" variant="outline">Upload</Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
+// VerificationCenter is now in its own component file
 
 function DocumentVault({ onBack }: { onBack: () => void }) {
   return (
