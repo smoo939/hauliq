@@ -320,6 +320,8 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
       if (error) throw error;
       if (data.status === 'success') {
         toast.success('Driver verification complete! You can now bid on loads.');
+      } else if (data.status === 'manual_review') {
+        toast.info('Some checks need manual review. You can request an admin review below.');
       } else {
         toast.error(`Verification issues: ${data.issues?.join('. ')}`);
       }
@@ -341,6 +343,25 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
       toast.error(err.message || 'Cross-match failed');
     } finally {
       setCrossMatchLoading(false);
+    }
+  };
+
+  const requestManualReview = async (entityType: 'driver' | 'truck') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-document', {
+        body: {
+          action: 'manual_review',
+          entityType,
+          entityId: entityType === 'truck' ? activeTruck?.id : undefined,
+          notes: 'Automatic verification could not complete. Requesting manual review.',
+        },
+      });
+      if (error) throw error;
+      toast.success(data.message || 'Manual review requested.');
+      queryClient.invalidateQueries({ queryKey: ['driver-verification'] });
+      queryClient.invalidateQueries({ queryKey: ['truck-verifications'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to request manual review');
     }
   };
 
