@@ -601,7 +601,7 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
       )}
 
       {/* Manual Review Fallback */}
-      {(driverVerif?.overall_status === 'flagged' || driverVerif?.overall_status === 'manual_review') && !driverVerif?.manual_review_requested && (
+      {(driverVerif?.overall_status === 'flagged' || driverVerif?.overall_status === 'manual_review') && !(driverVerif as any)?.manual_review_requested && (
         <Card className="border-warning/30 bg-warning/5">
           <CardContent className="p-4 space-y-2">
             <p className="text-sm font-medium">AI verification couldn't confirm your identity?</p>
@@ -615,7 +615,7 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
         </Card>
       )}
 
-      {activeTruck && (activeTruck.overall_status === 'flagged' || activeTruck.overall_status === 'manual_review') && !activeTruck.manual_review_requested && (
+      {activeTruck && (activeTruck.overall_status === 'flagged' || activeTruck.overall_status === 'manual_review') && !(activeTruck as any).manual_review_requested && (
         <Card className="border-warning/30 bg-warning/5">
           <CardContent className="p-4 space-y-2">
             <p className="text-sm font-medium">Truck verification issues?</p>
@@ -630,7 +630,7 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
       )}
 
       {/* Manual review pending */}
-      {(driverVerif?.manual_review_requested || activeTruck?.manual_review_requested) && (
+      {((driverVerif as any)?.manual_review_requested || (activeTruck as any)?.manual_review_requested) && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-4">
             <p className="text-sm font-medium text-primary">Manual Review In Progress</p>
