@@ -62,6 +62,8 @@ export type Database = {
           license_number: string | null
           license_status: string
           license_url: string | null
+          manual_review_notes: string | null
+          manual_review_requested: boolean | null
           national_id_name: string | null
           national_id_number: string | null
           national_id_url: string | null
@@ -83,6 +85,8 @@ export type Database = {
           license_number?: string | null
           license_status?: string
           license_url?: string | null
+          manual_review_notes?: string | null
+          manual_review_requested?: boolean | null
           national_id_name?: string | null
           national_id_number?: string | null
           national_id_url?: string | null
@@ -104,6 +108,8 @@ export type Database = {
           license_number?: string | null
           license_status?: string
           license_url?: string | null
+          manual_review_notes?: string | null
+          manual_review_requested?: boolean | null
           national_id_name?: string | null
           national_id_number?: string | null
           national_id_url?: string | null
@@ -339,6 +345,8 @@ export type Database = {
           insurance_number: string | null
           insurance_status: string
           insurance_url: string | null
+          manual_review_notes: string | null
+          manual_review_requested: boolean | null
           overall_status: string
           photo_status: string
           plate_from_photo: string | null
@@ -360,6 +368,8 @@ export type Database = {
           insurance_number?: string | null
           insurance_status?: string
           insurance_url?: string | null
+          manual_review_notes?: string | null
+          manual_review_requested?: boolean | null
           overall_status?: string
           photo_status?: string
           plate_from_photo?: string | null
@@ -381,6 +391,8 @@ export type Database = {
           insurance_number?: string | null
           insurance_status?: string
           insurance_url?: string | null
+          manual_review_notes?: string | null
+          manual_review_requested?: boolean | null
           overall_status?: string
           photo_status?: string
           plate_from_photo?: string | null

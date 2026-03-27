@@ -320,6 +320,8 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
       if (error) throw error;
       if (data.status === 'success') {
         toast.success('Driver verification complete! You can now bid on loads.');
+      } else if (data.status === 'manual_review') {
+        toast.info('Some checks need manual review. You can request an admin review below.');
       } else {
         toast.error(`Verification issues: ${data.issues?.join('. ')}`);
       }
@@ -341,6 +343,25 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
       toast.error(err.message || 'Cross-match failed');
     } finally {
       setCrossMatchLoading(false);
+    }
+  };
+
+  const requestManualReview = async (entityType: 'driver' | 'truck') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-document', {
+        body: {
+          action: 'manual_review',
+          entityType,
+          entityId: entityType === 'truck' ? activeTruck?.id : undefined,
+          notes: 'Automatic verification could not complete. Requesting manual review.',
+        },
+      });
+      if (error) throw error;
+      toast.success(data.message || 'Manual review requested.');
+      queryClient.invalidateQueries({ queryKey: ['driver-verification'] });
+      queryClient.invalidateQueries({ queryKey: ['truck-verifications'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to request manual review');
     }
   };
 
@@ -575,6 +596,47 @@ export default function VerificationCenter({ onBack }: { onBack: () => void }) {
             {driverVerif.rejection_reason.split('; ').map((issue: string, i: number) => (
               <p key={i} className="text-xs text-muted-foreground">• {issue}</p>
             ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Manual Review Fallback */}
+      {(driverVerif?.overall_status === 'flagged' || driverVerif?.overall_status === 'manual_review') && !(driverVerif as any)?.manual_review_requested && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="p-4 space-y-2">
+            <p className="text-sm font-medium">AI verification couldn't confirm your identity?</p>
+            <p className="text-xs text-muted-foreground">
+              Request a manual review — an admin will check your documents within 24-48 hours.
+            </p>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => requestManualReview('driver')}>
+              Request Manual Review (Driver)
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTruck && (activeTruck.overall_status === 'flagged' || activeTruck.overall_status === 'manual_review') && !(activeTruck as any).manual_review_requested && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="p-4 space-y-2">
+            <p className="text-sm font-medium">Truck verification issues?</p>
+            <p className="text-xs text-muted-foreground">
+              Request manual review for your truck documents.
+            </p>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => requestManualReview('truck')}>
+              Request Manual Review (Truck)
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Manual review pending */}
+      {((driverVerif as any)?.manual_review_requested || (activeTruck as any)?.manual_review_requested) && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <p className="text-sm font-medium text-primary">Manual Review In Progress</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Your documents are being reviewed by an admin. You'll be notified once the review is complete (typically 24-48 hours).
+            </p>
           </CardContent>
         </Card>
       )}
