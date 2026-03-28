@@ -34,6 +34,7 @@ function DriverLoads() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'available' | 'my-loads'>('available');
   const [chatLoadId, setChatLoadId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<LoadFilterValues>(defaultFilters);
 
   // Find the active in-transit load for GPS broadcasting
   const { data: myLoadsForTracking } = useQuery({
