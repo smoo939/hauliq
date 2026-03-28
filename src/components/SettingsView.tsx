@@ -199,6 +199,21 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
         </Card>
       </motion.div>
 
+      {/* Switch Role */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <Card>
+          <CardContent className="p-2">
+            <SettingItem
+              icon={ArrowLeftRight}
+              label={`Switch to ${role === 'driver' ? 'Shipper' : 'Carrier'}`}
+              description={`Currently: ${role === 'driver' ? 'Carrier' : 'Shipper'}`}
+              onClick={handleSwitchRole}
+              trailing={switching ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : undefined}
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
+
       <Button variant="destructive" className="w-full" onClick={handleSignOut}>
         <LogOut className="mr-2 h-4 w-4" /> Sign Out
       </Button>

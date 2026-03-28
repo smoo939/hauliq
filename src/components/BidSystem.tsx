@@ -120,18 +120,42 @@ export function BidList({ loadId, onAcceptBid }: BidListProps) {
         .order('created_at', { ascending: false });
       if (error) throw error;
 
-      // Fetch driver profiles
       const driverIds = data.map((b: any) => b.driver_id);
       if (driverIds.length === 0) return [];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .in('user_id', driverIds);
-      const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p]));
-      return data.map((bid: any) => ({ ...bid, driver_profile: profileMap[bid.driver_id] }));
+
+      // Fetch profiles, reviews, and truck verifications in parallel
+      const [profilesRes, reviewsRes, trucksRes] = await Promise.all([
+        supabase.from('profiles').select('user_id, full_name, phone, avatar_url').in('user_id', driverIds),
+        supabase.from('reviews').select('reviewed_id, rating').in('reviewed_id', driverIds),
+        supabase.from('truck_verifications').select('user_id, truck_label, truck_photo_url, overall_status').in('user_id', driverIds),
+      ]);
+
+      const profileMap = Object.fromEntries((profilesRes.data || []).map((p: any) => [p.user_id, p]));
+
+      // Aggregate reviews per driver
+      const reviewMap: Record<string, { avg: number; count: number }> = {};
+      for (const r of (reviewsRes.data || [])) {
+        if (!reviewMap[r.reviewed_id]) reviewMap[r.reviewed_id] = { avg: 0, count: 0 };
+        reviewMap[r.reviewed_id].count++;
+        reviewMap[r.reviewed_id].avg += r.rating;
+      }
+      for (const id of Object.keys(reviewMap)) {
+        reviewMap[id].avg = reviewMap[id].avg / reviewMap[id].count;
+      }
+
+      const truckMap = Object.fromEntries((trucksRes.data || []).map((t: any) => [t.user_id, t]));
+
+      return data.map((bid: any) => ({
+        ...bid,
+        driver_profile: profileMap[bid.driver_id],
+        driver_reviews: reviewMap[bid.driver_id] || null,
+        driver_truck: truckMap[bid.driver_id] || null,
+      }));
     },
     refetchInterval: 10000,
   });
+
+  const [expandedBid, setExpandedBid] = useState<string | null>(null);
 
   if (isLoading) return <p className="text-xs text-muted-foreground">Loading bids...</p>;
   if (!bids?.length) return <p className="text-xs text-muted-foreground">No bids yet</p>;
@@ -140,29 +164,79 @@ export function BidList({ loadId, onAcceptBid }: BidListProps) {
     <div className="space-y-2">
       <p className="text-xs font-medium text-muted-foreground">{bids.length} bid{bids.length !== 1 ? 's' : ''}</p>
       {bids.map((bid: any) => (
-        <div key={bid.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-              <User className="h-4 w-4 text-muted-foreground" />
+        <div key={bid.id} className="rounded-lg border overflow-hidden">
+          <div
+            className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+            onClick={() => setExpandedBid(expandedBid === bid.id ? null : bid.id)}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted overflow-hidden">
+                {bid.driver_truck?.truck_photo_url ? (
+                  <img src={bid.driver_truck.truck_photo_url} alt="truck" className="h-8 w-8 object-cover rounded-full" />
+                ) : (
+                  <User className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{bid.driver_profile?.full_name || 'Driver'}</p>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  {bid.driver_truck?.truck_label && <span>{bid.driver_truck.truck_label}</span>}
+                  {bid.driver_reviews && (
+                    <span className="flex items-center gap-0.5">
+                      ⭐ {bid.driver_reviews.avg.toFixed(1)} ({bid.driver_reviews.count})
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{bid.driver_profile?.full_name || 'Driver'}</p>
-              {bid.message && <p className="text-xs text-muted-foreground truncate">{bid.message}</p>}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-semibold tabular-nums">${Number(bid.amount).toFixed(2)}</span>
+              {bid.status === 'pending' && (
+                <Button size="sm" variant="default" onClick={(e) => { e.stopPropagation(); onAcceptBid(bid.id, bid.driver_id, Number(bid.amount)); }}>
+                  Accept
+                </Button>
+              )}
+              {bid.status !== 'pending' && (
+                <Badge variant="outline" className={bid.status === 'accepted' ? 'text-success border-success/30' : 'text-muted-foreground'}>
+                  {bid.status}
+                </Badge>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-sm font-semibold tabular-nums">${Number(bid.amount).toFixed(2)}</span>
-            {bid.status === 'pending' && (
-              <Button size="sm" variant="default" onClick={() => onAcceptBid(bid.id, bid.driver_id, Number(bid.amount))}>
-                Accept
-              </Button>
-            )}
-            {bid.status !== 'pending' && (
-              <Badge variant="outline" className={bid.status === 'accepted' ? 'text-success border-success/30' : 'text-muted-foreground'}>
-                {bid.status}
-              </Badge>
-            )}
-          </div>
+
+          {/* Expanded carrier profile */}
+          {expandedBid === bid.id && (
+            <div className="px-3 pb-3 pt-1 border-t border-border/40 space-y-2 bg-muted/20">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Name:</span>
+                  <p className="font-medium">{bid.driver_profile?.full_name || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Phone:</span>
+                  <p className="font-medium">{bid.driver_profile?.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Truck:</span>
+                  <p className="font-medium">{bid.driver_truck?.truck_label || 'Not registered'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Verified:</span>
+                  <p className="font-medium">{bid.driver_truck?.overall_status === 'verified' ? '✅ Yes' : '⏳ Pending'}</p>
+                </div>
+              </div>
+              {bid.driver_truck?.truck_photo_url && (
+                <img
+                  src={bid.driver_truck.truck_photo_url}
+                  alt="Carrier truck"
+                  className="w-full h-32 object-cover rounded-md"
+                />
+              )}
+              {bid.note && (
+                <p className="text-xs text-muted-foreground italic">"{bid.note}"</p>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
