@@ -204,7 +204,7 @@ function FleetManagement({ onBack }: { onBack: () => void }) {
             </div>
             <p className="text-sm font-medium">No vehicles registered</p>
             <p className="text-xs text-muted-foreground mt-1">Add your trucks, trailers, and fleet details</p>
-            <Button className="mt-4" size="sm">Add Vehicle</Button>
+            <Button className="mt-4" size="sm" onClick={() => toast.info('Fleet management coming soon! Complete truck verification first.')}>Add Vehicle</Button>
           </div>
         </CardContent>
       </Card>
