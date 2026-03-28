@@ -138,12 +138,14 @@ export type Database = {
           payment_method: string | null
           pickup_date: string | null
           pickup_location: string
+          pickup_time: string | null
           platform_fee: number | null
           price: number | null
           shipper_id: string
           status: string
           title: string
           updated_at: string
+          urgent: boolean | null
           weight_lbs: number | null
         }
         Insert: {
@@ -159,12 +161,14 @@ export type Database = {
           payment_method?: string | null
           pickup_date?: string | null
           pickup_location: string
+          pickup_time?: string | null
           platform_fee?: number | null
           price?: number | null
           shipper_id: string
           status?: string
           title: string
           updated_at?: string
+          urgent?: boolean | null
           weight_lbs?: number | null
         }
         Update: {
@@ -180,12 +184,14 @@ export type Database = {
           payment_method?: string | null
           pickup_date?: string | null
           pickup_location?: string
+          pickup_time?: string | null
           platform_fee?: number | null
           price?: number | null
           shipper_id?: string
           status?: string
           title?: string
           updated_at?: string
+          urgent?: boolean | null
           weight_lbs?: number | null
         }
         Relationships: []
