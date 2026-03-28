@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Moon, Sun, User, LogOut, Shield, Truck, FileText,
   ChevronRight, Bell, Lock, HelpCircle, Info, History,
-  MapPin, CreditCard, Star, Package
+  MapPin, CreditCard, Star, Package, ArrowLeftRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
