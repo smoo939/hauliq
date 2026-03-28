@@ -11,6 +11,7 @@ import {
   ChevronRight, Bell, Lock, HelpCircle, Info, History,
   MapPin, CreditCard, Star, Package
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import LoadHistoryView from './LoadHistoryView';
 import VerificationCenterComponent from './VerificationCenter';
@@ -204,7 +205,7 @@ function FleetManagement({ onBack }: { onBack: () => void }) {
             </div>
             <p className="text-sm font-medium">No vehicles registered</p>
             <p className="text-xs text-muted-foreground mt-1">Add your trucks, trailers, and fleet details</p>
-            <Button className="mt-4" size="sm">Add Vehicle</Button>
+            <Button className="mt-4" size="sm" onClick={() => toast.info('Fleet management coming soon! Complete truck verification first.')}>Add Vehicle</Button>
           </div>
         </CardContent>
       </Card>
@@ -228,7 +229,7 @@ function DocumentVault({ onBack }: { onBack: () => void }) {
             </div>
             <p className="text-sm font-medium">No documents yet</p>
             <p className="text-xs text-muted-foreground mt-1">Upload PODs and delivery receipts for your completed loads</p>
-            <Button className="mt-4" size="sm">Upload Document</Button>
+            <Button className="mt-4" size="sm" onClick={() => toast.info('Document upload coming soon! Complete a load first to upload PODs.')}>Upload Document</Button>
           </div>
         </CardContent>
       </Card>
