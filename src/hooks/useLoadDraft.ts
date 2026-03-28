@@ -8,11 +8,13 @@ export interface LoadDraft {
   pickup_location: string;
   delivery_location: string;
   pickup_date: string;
+  pickup_time: string;
   price: string;
   weight_lbs: string;
   equipment_type: string;
   load_type: string;
   payment_method: string;
+  urgent: string;
 }
 
 const emptyDraft: LoadDraft = {
@@ -21,11 +23,13 @@ const emptyDraft: LoadDraft = {
   pickup_location: '',
   delivery_location: '',
   pickup_date: '',
+  pickup_time: '',
   price: '',
   weight_lbs: '',
   equipment_type: '',
   load_type: 'FTL',
   payment_method: 'cash',
+  urgent: 'false',
 };
 
 export function useLoadDraft() {

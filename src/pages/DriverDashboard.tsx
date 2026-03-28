@@ -20,6 +20,7 @@ import LoadMapView from '@/components/LoadMapView';
 import { Routes, Route } from 'react-router-dom';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useLoadNotifications } from '@/hooks/useLoadNotifications';
+import LoadFilters, { applyLoadFilters, defaultFilters, type LoadFilterValues } from '@/components/LoadFilters';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   posted: { label: 'Available', color: 'bg-primary/10 text-primary border-primary/30' },
@@ -33,6 +34,7 @@ function DriverLoads() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'available' | 'my-loads'>('available');
   const [chatLoadId, setChatLoadId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<LoadFilterValues>(defaultFilters);
 
   // Find the active in-transit load for GPS broadcasting
   const { data: myLoadsForTracking } = useQuery({
@@ -82,9 +84,10 @@ function DriverLoads() {
   });
 
   const isLoading = activeTab === 'available' ? loadingAvailable : loadingMy;
-  const displayLoads = activeTab === 'available'
+  const rawLoads = activeTab === 'available'
     ? availableLoads
     : myLoads?.filter((l: any) => l.status !== 'delivered');
+  const displayLoads = activeTab === 'available' ? applyLoadFilters(rawLoads || [], filters) : rawLoads;
 
   return (
     <>
@@ -98,6 +101,7 @@ function DriverLoads() {
         </button>
       </div>
 
+      {activeTab === 'available' && <LoadFilters filters={filters} onChange={setFilters} />}
       {isLoading ? (
         <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
       ) : !displayLoads?.length ? (
@@ -117,9 +121,16 @@ function DriverLoads() {
                     <CardContent className="p-0">
                       {/* Header */}
                       <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                        <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${config.color}`}>
-                          {config.label}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${config.color}`}>
+                            {config.label}
+                          </Badge>
+                          {(load as any).urgent && (
+                            <Badge variant="outline" className="text-[10px] uppercase tracking-wide font-semibold bg-destructive/10 text-destructive border-destructive/30">
+                              🚨 Urgent
+                            </Badge>
+                          )}
+                        </div>
                         <span className="text-sm font-bold text-foreground">${Number(load.price).toFixed(0)}</span>
                       </div>
 

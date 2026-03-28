@@ -83,7 +83,8 @@ function ShipperLoads() {
         pickup_date: new Date(form.pickup_date).toISOString(), price: parseFloat(form.price),
         weight_lbs: form.weight_lbs ? parseFloat(form.weight_lbs) : null,
         equipment_type: form.equipment_type || null, load_type: form.load_type, payment_method: form.payment_method,
-      });
+        urgent: form.urgent || false, pickup_time: form.pickup_time || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -100,6 +101,8 @@ function ShipperLoads() {
     e.preventDefault();
     createLoad.mutate({
       ...draft,
+      urgent: draft.urgent === 'true',
+      pickup_time: draft.pickup_time || null,
       cargo_photos: cargoPhotos.length > 0 ? cargoPhotos : undefined,
     });
   };
@@ -157,19 +160,37 @@ function ShipperLoads() {
                     <Input id="pickup_date" name="pickup_date" type="date" required value={draft.pickup_date} onChange={(e) => updateField('pickup_date', e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="price">Budget (USD)</Label>
-                    <Input id="price" name="price" type="number" step="0.01" placeholder="Auto-calculated" required value={draft.price} onChange={(e) => updateField('price', e.target.value)} />
+                    <Label htmlFor="pickup_time">Pickup Time</Label>
+                    <Input id="pickup_time" name="pickup_time" type="time" value={draft.pickup_time || ''} onChange={(e) => updateField('pickup_time', e.target.value)} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
+                    <Label htmlFor="price">Budget (USD)</Label>
+                    <Input id="price" name="price" type="number" step="0.01" placeholder="Auto-calculated" required value={draft.price} onChange={(e) => updateField('price', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="weight_lbs">Weight (kg)</Label>
                     <Input id="weight_lbs" name="weight_lbs" type="number" placeholder="Optional" value={draft.weight_lbs} onChange={(e) => updateField('weight_lbs', e.target.value)} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="equipment_type">Equipment</Label>
-                    <Input id="equipment_type" name="equipment_type" placeholder="e.g. Flatbed" value={draft.equipment_type} onChange={(e) => updateField('equipment_type', e.target.value)} />
-                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="equipment_type">Equipment / Truck Type</Label>
+                  <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={draft.equipment_type} onChange={(e) => updateField('equipment_type', e.target.value)}>
+                    <option value="">Select truck type</option>
+                    <option value="Flatbed">Flatbed</option>
+                    <option value="Enclosed">Enclosed / Box Body</option>
+                    <option value="Refrigerated">Refrigerated (Reefer)</option>
+                    <option value="Tanker">Tanker</option>
+                    <option value="Lowbed">Lowbed / Low Loader</option>
+                    <option value="Tipper">Tipper / Dump Truck</option>
+                    <option value="Curtain-side">Curtain-side</option>
+                    <option value="Container">Container Carrier</option>
+                    <option value="Car Carrier">Car Carrier</option>
+                    <option value="Livestock">Livestock Carrier</option>
+                    <option value="Logging">Logging Truck</option>
+                    <option value="Side Loader">Side Loader</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
@@ -184,6 +205,18 @@ function ShipperLoads() {
                       <option value="cash">Cash</option><option value="transfer">Bank Transfer</option><option value="ecocash">EcoCash</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Urgent toggle */}
+                <div className="flex items-center justify-between rounded-lg border border-input p-3">
+                  <div>
+                    <p className="text-sm font-medium">🚨 Urgent Shipment</p>
+                    <p className="text-xs text-muted-foreground">Mark if this load needs priority handling</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={draft.urgent === 'true'} onChange={(e) => updateField('urgent', e.target.checked ? 'true' : 'false')} />
+                    <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-destructive after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-background after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                  </label>
                 </div>
 
                 {/* Cargo Photo Upload */}
@@ -222,11 +255,18 @@ function ShipperLoads() {
                 <Card className="overflow-hidden border-border/60 hover:border-primary/30 transition-all">
                   <CardContent className="p-0">
                     {/* Uber Freight-style compact header */}
-                    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${statusColors[load.status] || ''}`}>
-                        {load.status.replace('_', ' ')}
-                      </Badge>
-                      <span className="text-sm font-bold text-foreground">${Number(load.price).toFixed(0)}</span>
+                     <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                       <div className="flex items-center gap-1.5">
+                         <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${statusColors[load.status] || ''}`}>
+                           {load.status.replace('_', ' ')}
+                         </Badge>
+                         {(load as any).urgent && (
+                           <Badge variant="outline" className="text-[10px] uppercase tracking-wide font-semibold bg-destructive/10 text-destructive border-destructive/30">
+                             🚨 Urgent
+                           </Badge>
+                         )}
+                       </div>
+                       <span className="text-sm font-bold text-foreground">${Number(load.price).toFixed(0)}</span>
                     </div>
 
                     {/* Route line */}

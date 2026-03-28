@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Moon, Sun, User, LogOut, Shield, Truck, FileText,
   ChevronRight, Bell, Lock, HelpCircle, Info, History,
-  MapPin, CreditCard, Star, Package
+  MapPin, CreditCard, Star, Package, ArrowLeftRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -52,14 +52,29 @@ function SettingItem({ icon: Icon, label, description, onClick, trailing, danger
 }
 
 export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, setRole } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth', { replace: true });
+  };
+
+  const handleSwitchRole = async () => {
+    const newRole = role === 'driver' ? 'shipper' : 'driver';
+    setSwitching(true);
+    try {
+      await setRole(newRole);
+      toast.success(`Switched to ${newRole === 'driver' ? 'Carrier' : 'Shipper'} mode`);
+      navigate(newRole === 'driver' ? '/driver' : '/shipper', { replace: true });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to switch role');
+    } finally {
+      setSwitching(false);
+    }
   };
 
   const back = () => setActiveSection(null);
@@ -180,6 +195,21 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
             <SettingItem icon={Lock} label="Security" description="Password & 2FA" onClick={() => setActiveSection('security')} />
             <SettingItem icon={HelpCircle} label="Help & Support" onClick={() => setActiveSection('help')} />
             <SettingItem icon={Info} label="About Hauliq" description="v1.0.0" onClick={() => setActiveSection('about')} />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Switch Role */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <Card>
+          <CardContent className="p-2">
+            <SettingItem
+              icon={ArrowLeftRight}
+              label={`Switch to ${role === 'driver' ? 'Shipper' : 'Carrier'}`}
+              description={`Currently: ${role === 'driver' ? 'Carrier' : 'Shipper'}`}
+              onClick={handleSwitchRole}
+              trailing={switching ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : undefined}
+            />
           </CardContent>
         </Card>
       </motion.div>
