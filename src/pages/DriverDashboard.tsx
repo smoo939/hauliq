@@ -84,9 +84,10 @@ function DriverLoads() {
   });
 
   const isLoading = activeTab === 'available' ? loadingAvailable : loadingMy;
-  const displayLoads = activeTab === 'available'
+  const rawLoads = activeTab === 'available'
     ? availableLoads
     : myLoads?.filter((l: any) => l.status !== 'delivered');
+  const displayLoads = activeTab === 'available' ? applyLoadFilters(rawLoads || [], filters) : rawLoads;
 
   return (
     <>
