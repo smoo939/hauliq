@@ -228,7 +228,7 @@ function DocumentVault({ onBack }: { onBack: () => void }) {
             </div>
             <p className="text-sm font-medium">No documents yet</p>
             <p className="text-xs text-muted-foreground mt-1">Upload PODs and delivery receipts for your completed loads</p>
-            <Button className="mt-4" size="sm">Upload Document</Button>
+            <Button className="mt-4" size="sm" onClick={() => toast.info('Document upload coming soon! Complete a load first to upload PODs.')}>Upload Document</Button>
           </div>
         </CardContent>
       </Card>
