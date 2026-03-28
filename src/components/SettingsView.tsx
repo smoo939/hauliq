@@ -52,14 +52,29 @@ function SettingItem({ icon: Icon, label, description, onClick, trailing, danger
 }
 
 export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, setRole } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth', { replace: true });
+  };
+
+  const handleSwitchRole = async () => {
+    const newRole = role === 'driver' ? 'shipper' : 'driver';
+    setSwitching(true);
+    try {
+      await setRole(newRole);
+      toast.success(`Switched to ${newRole === 'driver' ? 'Carrier' : 'Shipper'} mode`);
+      navigate(newRole === 'driver' ? '/driver' : '/shipper', { replace: true });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to switch role');
+    } finally {
+      setSwitching(false);
+    }
   };
 
   const back = () => setActiveSection(null);
