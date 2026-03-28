@@ -83,7 +83,8 @@ function ShipperLoads() {
         pickup_date: new Date(form.pickup_date).toISOString(), price: parseFloat(form.price),
         weight_lbs: form.weight_lbs ? parseFloat(form.weight_lbs) : null,
         equipment_type: form.equipment_type || null, load_type: form.load_type, payment_method: form.payment_method,
-      });
+        urgent: form.urgent || false, pickup_time: form.pickup_time || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
