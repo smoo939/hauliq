@@ -121,9 +121,16 @@ function DriverLoads() {
                     <CardContent className="p-0">
                       {/* Header */}
                       <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                        <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${config.color}`}>
-                          {config.label}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${config.color}`}>
+                            {config.label}
+                          </Badge>
+                          {(load as any).urgent && (
+                            <Badge variant="outline" className="text-[10px] uppercase tracking-wide font-semibold bg-destructive/10 text-destructive border-destructive/30">
+                              🚨 Urgent
+                            </Badge>
+                          )}
+                        </div>
                         <span className="text-sm font-bold text-foreground">${Number(load.price).toFixed(0)}</span>
                       </div>
 
