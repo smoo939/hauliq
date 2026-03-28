@@ -20,6 +20,7 @@ import LoadMapView from '@/components/LoadMapView';
 import { Routes, Route } from 'react-router-dom';
 import { useDriverTracking } from '@/hooks/useDriverTracking';
 import { useLoadNotifications } from '@/hooks/useLoadNotifications';
+import LoadFilters, { applyLoadFilters, defaultFilters, type LoadFilterValues } from '@/components/LoadFilters';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   posted: { label: 'Available', color: 'bg-primary/10 text-primary border-primary/30' },
