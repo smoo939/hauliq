@@ -100,6 +100,8 @@ function ShipperLoads() {
     e.preventDefault();
     createLoad.mutate({
       ...draft,
+      urgent: draft.urgent === 'true',
+      pickup_time: draft.pickup_time || null,
       cargo_photos: cargoPhotos.length > 0 ? cargoPhotos : undefined,
     });
   };
