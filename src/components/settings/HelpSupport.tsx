@@ -13,7 +13,7 @@ export default function HelpSupport({ onBack }: { onBack: () => void }) {
       <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
       <h2 className="text-lg font-semibold">Help & Support</h2>
       {items.map((item) => (
-        <Card key={item.label} className="cursor-pointer hover:border-primary/30 transition-all">
+        <Card key={item.label} className="cursor-pointer hover:border-primary/30 transition-all" onClick={item.action}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
               <item.icon className="h-5 w-5 text-muted-foreground" />

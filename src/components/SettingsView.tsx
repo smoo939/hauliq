@@ -11,6 +11,7 @@ import {
   ChevronRight, Bell, Lock, HelpCircle, Info, History,
   MapPin, CreditCard, Star, Package
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import LoadHistoryView from './LoadHistoryView';
 import VerificationCenterComponent from './VerificationCenter';
