@@ -255,11 +255,18 @@ function ShipperLoads() {
                 <Card className="overflow-hidden border-border/60 hover:border-primary/30 transition-all">
                   <CardContent className="p-0">
                     {/* Uber Freight-style compact header */}
-                    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${statusColors[load.status] || ''}`}>
-                        {load.status.replace('_', ' ')}
-                      </Badge>
-                      <span className="text-sm font-bold text-foreground">${Number(load.price).toFixed(0)}</span>
+                     <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                       <div className="flex items-center gap-1.5">
+                         <Badge variant="outline" className={`text-[10px] uppercase tracking-wide font-semibold ${statusColors[load.status] || ''}`}>
+                           {load.status.replace('_', ' ')}
+                         </Badge>
+                         {(load as any).urgent && (
+                           <Badge variant="outline" className="text-[10px] uppercase tracking-wide font-semibold bg-destructive/10 text-destructive border-destructive/30">
+                             🚨 Urgent
+                           </Badge>
+                         )}
+                       </div>
+                       <span className="text-sm font-bold text-foreground">${Number(load.price).toFixed(0)}</span>
                     </div>
 
                     {/* Route line */}
