@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Truck, MessageCircle, Settings, Map } from 'lucide-react';
+import { Home, Package, MessageCircle, User, PlusCircle, ClipboardList, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -7,6 +7,7 @@ interface Tab {
   path: string;
   label: string;
   icon: React.ElementType;
+  highlight?: boolean;
 }
 
 export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
@@ -15,16 +16,16 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
 
   const tabs: Tab[] = role === 'shipper'
     ? [
-        { path: '/shipper', label: 'Loads', icon: Package },
-        { path: '/shipper/map', label: 'Map', icon: Map },
-        { path: '/shipper/chat', label: 'Chat', icon: MessageCircle },
-        { path: '/shipper/settings', label: 'Settings', icon: Settings },
+        { path: '/shipper', label: 'Create', icon: PlusCircle, highlight: true },
+        { path: '/shipper/shipments', label: 'Shipments', icon: ClipboardList },
+        { path: '/shipper/chat', label: 'Messages', icon: MessageCircle },
+        { path: '/shipper/profile', label: 'Profile', icon: User },
       ]
     : [
-        { path: '/driver', label: 'Loads', icon: Package },
-        { path: '/driver/map', label: 'Map', icon: Map },
-        { path: '/driver/chat', label: 'Chat', icon: MessageCircle },
-        { path: '/driver/settings', label: 'Settings', icon: Settings },
+        { path: '/driver', label: 'Home', icon: Home },
+        { path: '/driver/loads', label: 'Loads', icon: Search },
+        { path: '/driver/chat', label: 'Messages', icon: MessageCircle },
+        { path: '/driver/profile', label: 'Profile', icon: User },
       ];
 
   return (
@@ -39,7 +40,11 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
               onClick={() => navigate(tab.path)}
               className={cn(
                 'relative flex flex-1 flex-col items-center gap-0.5 py-2 pt-2.5 text-[11px] font-medium transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                isActive
+                  ? 'text-primary'
+                  : tab.highlight
+                    ? 'text-primary/70'
+                    : 'text-muted-foreground'
               )}
             >
               {isActive && (
@@ -49,7 +54,7 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
-              <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.8} />
+              <Icon className={cn('h-5 w-5', tab.highlight && !isActive && 'text-primary/70')} strokeWidth={isActive ? 2.2 : 1.8} />
               <span>{tab.label}</span>
             </button>
           );
