@@ -21,7 +21,7 @@ export default function ShipperCreateLoad() {
   const queryClient = useQueryClient();
   const { draft, updateField, clearDraft, hasDraft } = useLoadDraft();
   const [cargoPhotos, setCargoPhotos] = useState<string[]>([]);
-  const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string; suggestedPrice: number } | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationHours: number; suggestedPrice: number } | null>(null);
 
   const createLoad = useMutation({
     mutationFn: async (form: any) => {
