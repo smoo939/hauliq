@@ -122,7 +122,7 @@ export default function ShipperCreateLoad() {
                 <Sparkles className="h-4 w-4 text-primary shrink-0" />
                 <div className="flex-1 text-xs">
                   <p className="font-medium text-foreground">AI Suggested: <span className="text-primary font-bold">${routeInfo.suggestedPrice}</span></p>
-                  <p className="text-muted-foreground">{routeInfo.distance} · {routeInfo.duration}</p>
+                  <p className="text-muted-foreground">{routeInfo.distanceKm} km · {routeInfo.durationHours}h</p>
                 </div>
               </motion.div>
             )}

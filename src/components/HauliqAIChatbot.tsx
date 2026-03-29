@@ -200,7 +200,7 @@ export default function HauliqAIChatbot() {
           >
             <Button
               onClick={() => setOpen(true)}
-              className="h-14 w-14 rounded-full shadow-lg glow-primary"
+              className="h-14 w-14 rounded-full shadow-lg bg-[hsl(217,91%,60%)] hover:bg-[hsl(217,91%,50%)] text-white"
               size="icon"
             >
               <Sparkles className="h-6 w-6" />
