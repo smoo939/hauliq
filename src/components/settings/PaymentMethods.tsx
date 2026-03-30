@@ -93,11 +93,11 @@ export default function PaymentMethods({ onBack }: { onBack: () => void }) {
 
       {/* Subscription Status */}
       {isActive ? (
-        <Card className="border-green-500/30 bg-green-500/5">
+        <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle className="h-8 w-8 text-green-500 shrink-0" />
+            <CheckCircle className="h-8 w-8 text-primary shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+              <p className="text-sm font-semibold text-primary">
                 Subscription Active
               </p>
               <p className="text-xs text-muted-foreground">
@@ -107,11 +107,11 @@ export default function PaymentMethods({ onBack }: { onBack: () => void }) {
           </CardContent>
         </Card>
       ) : subscription?.status === 'pending' ? (
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
+        <Card className="border-accent/30 bg-accent/5">
           <CardContent className="p-4 flex items-center gap-3">
-            <Clock className="h-8 w-8 text-yellow-500 shrink-0" />
+            <Clock className="h-8 w-8 text-accent-foreground shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-400">
+              <p className="text-sm font-semibold text-accent-foreground">
                 Payment Pending
               </p>
               <p className="text-xs text-muted-foreground">

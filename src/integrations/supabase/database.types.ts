@@ -309,6 +309,45 @@ export type AppDatabase = {
         }
         Relationships: []
       }
+      driver_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          status: string
+          amount: number
+          carrier_type: string | null
+          phone_number: string | null
+          contipay_transaction_id: string | null
+          expires_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: string
+          amount?: number
+          carrier_type?: string | null
+          phone_number?: string | null
+          contipay_transaction_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: string
+          amount?: number
+          carrier_type?: string | null
+          phone_number?: string | null
+          contipay_transaction_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
