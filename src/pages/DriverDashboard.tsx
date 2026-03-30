@@ -26,14 +26,12 @@ export default function DriverDashboard() {
         </div>
       </header>
 
-      <main className="px-4 py-4">
-        <Routes>
-          <Route index element={<DriverHomeView />} />
-          <Route path="loads" element={<DriverLoadsView />} />
-          <Route path="chat" element={<ChatListView />} />
-          <Route path="profile" element={<SettingsView role="driver" />} />
-        </Routes>
-      </main>
+      <Routes>
+        <Route index element={<DriverHomeView />} />
+        <Route path="loads" element={<main className="px-4 py-4"><DriverLoadsView /></main>} />
+        <Route path="chat" element={<main className="px-4 py-4"><ChatListView /></main>} />
+        <Route path="profile" element={<main className="px-4 py-4"><SettingsView role="driver" /></main>} />
+      </Routes>
 
       <BottomTabs role="driver" />
     </div>
