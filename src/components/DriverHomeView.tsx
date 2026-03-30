@@ -243,7 +243,7 @@ export default function DriverHomeView() {
           {/* Online toggle + filters */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 border border-border shadow-lg">
-              <span className={`text-[10px] font-bold ${online ? 'text-green-500' : 'text-muted-foreground'}`}>
+              <span className={`text-[10px] font-bold ${online ? 'text-primary' : 'text-muted-foreground'}`}>
                 {online ? 'ONLINE' : 'OFFLINE'}
               </span>
               <Switch
