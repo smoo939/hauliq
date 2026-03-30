@@ -52,6 +52,45 @@ export type Database = {
           },
         ]
       }
+      driver_subscriptions: {
+        Row: {
+          amount: number
+          carrier_type: string | null
+          contipay_transaction_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          phone_number: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          carrier_type?: string | null
+          contipay_transaction_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          phone_number?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          carrier_type?: string | null
+          contipay_transaction_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          phone_number?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       driver_verifications: {
         Row: {
           created_at: string
