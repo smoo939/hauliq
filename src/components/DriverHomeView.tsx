@@ -240,6 +240,7 @@ export default function DriverHomeView() {
               {driverPos ? 'Your Location' : 'Zimbabwe'}
             </span>
           </div>
+          <SubscriptionBadge />
 
           {/* Online toggle + filters */}
           <div className="flex items-center gap-2">
