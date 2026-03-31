@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Package, MessageCircle, User, PlusCircle, ClipboardList, Search } from 'lucide-react';
+import { Home, Package, MessageCircle, User, PlusCircle, ClipboardList, Search, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -16,7 +16,8 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
 
   const tabs: Tab[] = role === 'shipper'
     ? [
-        { path: '/shipper', label: 'Create', icon: PlusCircle, highlight: true },
+        { path: '/shipper', label: 'Live', icon: Navigation, highlight: true },
+        { path: '/shipper/create', label: 'Create', icon: PlusCircle },
         { path: '/shipper/shipments', label: 'Shipments', icon: ClipboardList },
         { path: '/shipper/chat', label: 'Messages', icon: MessageCircle },
         { path: '/shipper/profile', label: 'Profile', icon: User },
@@ -29,7 +30,7 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
       ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-[2000] border-t border-border bg-card/95 backdrop-blur-md safe-area-bottom">
       <div className="flex items-stretch justify-around">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;

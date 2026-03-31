@@ -168,6 +168,7 @@ export default function SettingsView({ role }: { role: 'shipper' | 'driver' }) {
             <SettingItem icon={History} label="Load History" description="View all completed deliveries" onClick={() => setActiveSection('history')} />
             {role === 'driver' ? (
               <>
+                <SettingItem icon={CreditCard} label="Subscription" description="$35/mo carrier plan" onClick={() => setActiveSection('payments')} />
                 <SettingItem icon={Truck} label="My Fleet" description="Vehicles, trailers & capacity" onClick={() => setActiveSection('fleet')} />
                 <SettingItem icon={Shield} label="Verification Center" description="ZIMRA, GIT & operator licenses" onClick={() => setActiveSection('verification')} />
                 <SettingItem icon={FileText} label="Document Vault" description="POD uploads & delivery receipts" onClick={() => setActiveSection('documents')} />

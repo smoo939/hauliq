@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Menu, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
+import { SubscriptionBadge } from '@/components/driver/SubscriptionPaywall';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import LoadCard from '@/components/driver/LoadCard';
 import LoadDetailModal from '@/components/driver/LoadDetailModal';
@@ -239,6 +240,7 @@ export default function DriverHomeView() {
               {driverPos ? 'Your Location' : 'Zimbabwe'}
             </span>
           </div>
+          <SubscriptionBadge />
 
           {/* Online toggle + filters */}
           <div className="flex items-center gap-2">
