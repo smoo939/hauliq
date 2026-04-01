@@ -4,7 +4,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const SubscribeSchema = z.object({
@@ -12,72 +12,103 @@ const SubscribeSchema = z.object({
   carrier_type: z.enum(["EcoCash", "InnBucks", "OneMoney", "Telecash"]),
 });
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get("authorization");
+    const authHeader =
+      req.headers.get("authorization") ?? req.headers.get("Authorization");
+
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    // Use anon client to validate the JWT via getClaims
-    const userClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = claimsData.claims.sub as string;
-    const userEmail = (claimsData.claims.email as string) || "";
-
-    // Service role client for DB operations
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Validate input
     const parsed = SubscribeSchema.safeParse(await req.json());
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return jsonResponse(
+        { error: parsed.error.flatten().fieldErrors },
+        400,
       );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+      console.error("Missing Supabase environment variables");
+      return jsonResponse({ error: "Server misconfiguration" }, 500);
+    }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+
+    let userId: string | null = null;
+    let userEmail = "";
+
+    const { data: claimsData, error: claimsError } = await userClient.auth
+      .getClaims(token);
+
+    if (claimsData?.claims?.sub) {
+      userId = String(claimsData.claims.sub);
+      userEmail = typeof claimsData.claims.email === "string"
+        ? claimsData.claims.email
+        : "";
+    }
+
+    if (!userId) {
+      const { data: userData, error: userError } = await userClient.auth.getUser(
+        token,
+      );
+
+      if (userData?.user) {
+        userId = userData.user.id;
+        userEmail = userData.user.email ?? "";
+      } else {
+        console.error("Subscription auth validation failed", {
+          claimsError: claimsError?.message ?? null,
+          userError: userError?.message ?? null,
+        });
+        return jsonResponse({ error: "Unauthorized" }, 401);
+      }
     }
 
     const { phone_number, carrier_type } = parsed.data;
 
-    // Check for existing active subscription
-    const { data: existingSub } = await adminClient
+    const { data: existingSub, error: existingSubError } = await adminClient
       .from("driver_subscriptions")
-      .select("*")
+      .select("id, expires_at")
       .eq("user_id", userId)
       .eq("status", "active")
       .gte("expires_at", new Date().toISOString())
       .maybeSingle();
 
+    if (existingSubError) {
+      console.error("Failed checking existing subscription", existingSubError);
+      return jsonResponse({ error: "Unable to verify subscription status" }, 500);
+    }
+
     if (existingSub) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           error: "You already have an active subscription",
           expires_at: existingSub.expires_at,
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        },
+        400,
       );
     }
 
@@ -88,10 +119,16 @@ Deno.serve(async (req) => {
       Telecash: "TC",
     };
 
-    const apiKey = Deno.env.get("CONTIPAY_API_KEY")!;
-    const apiSecret = Deno.env.get("CONTIPAY_API_SECRET")!;
+    const apiKey = Deno.env.get("CONTIPAY_API_KEY");
+    const apiSecret = Deno.env.get("CONTIPAY_API_SECRET");
+
+    if (!apiKey || !apiSecret) {
+      console.error("Missing ContiPay credentials");
+      return jsonResponse({ error: "Payment service is not configured" }, 500);
+    }
+
     const credentials = btoa(`${apiKey}:${apiSecret}`);
-    const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/contipay-webhook`;
+    const webhookUrl = `${supabaseUrl}/functions/v1/contipay-webhook`;
 
     const contiPayload = {
       merchantCode: merchantCodes[carrier_type] || "EC",
@@ -99,10 +136,13 @@ Deno.serve(async (req) => {
       amount: 35.0,
       customerPhone: phone_number,
       customerEmail: userEmail,
-      description: "HaulIQ Driver Monthly Subscription",
+      description: "Hauliq Driver Monthly Subscription",
       reference: `HAULIQ-SUB-${userId.slice(0, 8)}-${Date.now()}`,
       callbackUrl: webhookUrl,
-      metadata: { user_id: userId, subscription_type: "monthly" },
+      metadata: {
+        user_id: userId,
+        subscription_type: "monthly",
+      },
     };
 
     const contiResponse = await fetch(
@@ -114,19 +154,21 @@ Deno.serve(async (req) => {
           Authorization: `Basic ${credentials}`,
         },
         body: JSON.stringify(contiPayload),
-      }
+      },
     );
 
-    const contiResult = await contiResponse.json();
+    const contiResult = await contiResponse.json().catch(async () => ({
+      message: await contiResponse.text().catch(() => "Unknown error"),
+    }));
 
     if (!contiResponse.ok) {
-      console.error("ContiPay error:", contiResult);
-      return new Response(
-        JSON.stringify({
+      console.error("ContiPay error", contiResult);
+      return jsonResponse(
+        {
           error: "Payment initiation failed. Please try again.",
           details: contiResult.message || "Unknown error",
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        },
+        502,
       );
     }
 
@@ -143,22 +185,18 @@ Deno.serve(async (req) => {
       });
 
     if (insertError) {
-      console.error("DB insert error:", insertError);
+      console.error("DB insert error", insertError);
+      return jsonResponse({ error: "Failed to create subscription record" }, 500);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `A payment prompt has been sent to ${phone_number}. Please enter your PIN on your phone to complete the $35 subscription.`,
-        transaction_id: contiResult.transactionId || contiPayload.reference,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({
+      success: true,
+      message:
+        `A payment prompt has been sent to ${phone_number}. Please enter your PIN on your phone to complete the $35 subscription.`,
+      transaction_id: contiResult.transactionId || contiPayload.reference,
+    });
   } catch (err) {
-    console.error("Subscribe error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("Subscribe error", err);
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
