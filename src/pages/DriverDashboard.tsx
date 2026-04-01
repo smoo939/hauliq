@@ -1,38 +1,43 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Truck } from 'lucide-react';
 import { Routes, Route } from 'react-router-dom';
 import BottomTabs from '@/components/BottomTabs';
 import DriverHomeView from '@/components/DriverHomeView';
-import DriverLoadsView from '@/components/DriverLoadsView';
+import DriverWorkView from '@/components/driver/DriverWorkView';
+import DriverActiveView from '@/components/driver/DriverActiveView';
 import ChatListView from '@/components/ChatListView';
 import SettingsView from '@/components/SettingsView';
 import { useLoadNotifications } from '@/hooks/useLoadNotifications';
+import { Truck } from 'lucide-react';
 
-export default function DriverDashboard() {
-  const { user, profile } = useAuth();
-  useLoadNotifications(user?.id, 'driver');
-
+function PageWrapper({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="pb-20">
       <header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md">
         <div className="px-4 flex h-14 items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Truck className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-base font-black leading-tight">Hauliq</h1>
-            <p className="text-[11px] text-muted-foreground">{profile?.full_name || 'Driver'}</p>
-          </div>
+          <h1 className="text-base font-black leading-tight">{title}</h1>
         </div>
       </header>
+      {children}
+    </div>
+  );
+}
 
+export default function DriverDashboard() {
+  const { user } = useAuth();
+  useLoadNotifications(user?.id, 'driver');
+
+  return (
+    <div className="min-h-screen bg-background">
       <Routes>
         <Route index element={<DriverHomeView />} />
-        <Route path="loads" element={<main className="px-4 py-4"><DriverLoadsView /></main>} />
-        <Route path="chat" element={<main className="px-4 py-4"><ChatListView /></main>} />
-        <Route path="profile" element={<main className="px-4 py-4"><SettingsView role="driver" /></main>} />
+        <Route path="work" element={<PageWrapper title="Work"><DriverWorkView /></PageWrapper>} />
+        <Route path="active" element={<PageWrapper title="Active Trips"><DriverActiveView /></PageWrapper>} />
+        <Route path="chat" element={<PageWrapper title="Messages"><main className="px-4 py-4"><ChatListView /></main></PageWrapper>} />
+        <Route path="profile" element={<PageWrapper title="Settings"><main className="px-4 py-4"><SettingsView role="driver" /></main></PageWrapper>} />
       </Routes>
-
       <BottomTabs role="driver" />
     </div>
   );

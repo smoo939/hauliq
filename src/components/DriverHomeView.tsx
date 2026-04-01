@@ -8,12 +8,14 @@ import 'leaflet/dist/leaflet.css';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Menu, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MapPin, ChevronUp, ChevronDown, Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { SubscriptionBadge } from '@/components/driver/SubscriptionPaywall';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 import LoadCard from '@/components/driver/LoadCard';
 import LoadDetailModal from '@/components/driver/LoadDetailModal';
 import DriverFilters, { Filters, DEFAULT_FILTERS } from '@/components/driver/DriverFilters';
+import AppSidebar from '@/components/AppSidebar';
 
 // Fix leaflet icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -49,7 +51,6 @@ interface GeoLoad {
   lng: number;
 }
 
-// Geocoding with cache
 const geoCache = new Map<string, { lat: number; lng: number }>();
 async function geocode(location: string): Promise<{ lat: number; lng: number } | null> {
   if (geoCache.has(location)) return geoCache.get(location)!;
@@ -69,7 +70,6 @@ async function geocode(location: string): Promise<{ lat: number; lng: number } |
   }
 }
 
-// Component to recenter map
 function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
@@ -78,7 +78,6 @@ function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-// Snap points for bottom sheet (percentage of viewport)
 const SNAP_COLLAPSED = 0.12;
 const SNAP_HALF = 0.4;
 const SNAP_FULL = 0.85;
@@ -92,7 +91,7 @@ export default function DriverHomeView() {
   const [geoLoads, setGeoLoads] = useState<GeoLoad[]>([]);
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null);
   const [sheetHeight, setSheetHeight] = useState(SNAP_HALF);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Driver location
   useEffect(() => {
@@ -121,7 +120,7 @@ export default function DriverHomeView() {
     enabled: !!user,
   });
 
-  // Realtime subscription
+  // Realtime
   useEffect(() => {
     const channel = supabase
       .channel('loads-realtime')
@@ -132,7 +131,7 @@ export default function DriverHomeView() {
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  // Geocode loads
+  // Geocode
   useEffect(() => {
     if (!loads?.length) return;
     const geocodeAll = async () => {
@@ -154,7 +153,7 @@ export default function DriverHomeView() {
     geocodeAll();
   }, [loads]);
 
-  // Filter loads
+  // Filter + search
   const filteredLoads = useMemo(() => {
     if (!loads) return [];
     return loads.filter((l: any) => {
@@ -162,23 +161,30 @@ export default function DriverHomeView() {
       if (filters.equipment.length && !filters.equipment.includes(l.equipment_type || '')) return false;
       if (filters.cargoType.length && !filters.cargoType.includes(l.load_type || '')) return false;
       if (filters.urgentOnly && !l.urgent) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const match =
+          l.pickup_location?.toLowerCase().includes(q) ||
+          l.delivery_location?.toLowerCase().includes(q) ||
+          l.title?.toLowerCase().includes(q) ||
+          l.equipment_type?.toLowerCase().includes(q);
+        if (!match) return false;
+      }
       return true;
     });
-  }, [loads, filters]);
+  }, [loads, filters, searchQuery]);
 
-  // Bottom sheet drag handler
-  const handleDrag = useCallback((_: any, info: PanInfo) => {
-    const vh = window.innerHeight;
-    const delta = -info.offset.y / vh;
-    const newHeight = Math.max(SNAP_COLLAPSED, Math.min(SNAP_FULL, sheetHeight + delta));
-
-    // Snap to nearest
-    const snaps = [SNAP_COLLAPSED, SNAP_HALF, SNAP_FULL];
-    const closest = snaps.reduce((a, b) =>
-      Math.abs(b - newHeight) < Math.abs(a - newHeight) ? b : a
-    );
-    setSheetHeight(closest);
-  }, [sheetHeight]);
+  // Recommended: high price or urgent, top 3
+  const recommendedLoads = useMemo(() => {
+    if (!filteredLoads.length) return [];
+    return [...filteredLoads]
+      .sort((a: any, b: any) => {
+        const scoreA = (a.price || 0) + (a.urgent ? 500 : 0);
+        const scoreB = (b.price || 0) + (b.urgent ? 500 : 0);
+        return scoreB - scoreA;
+      })
+      .slice(0, 3);
+  }, [filteredLoads]);
 
   const toggleSheet = () => {
     if (sheetHeight <= SNAP_COLLAPSED) setSheetHeight(SNAP_HALF);
@@ -189,7 +195,7 @@ export default function DriverHomeView() {
   const mapCenter = driverPos || { lat: -19.0154, lng: 29.1549 };
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-0">
+    <div className="fixed inset-0 z-0">
       {/* Full-screen map */}
       <MapContainer
         center={[mapCenter.lat, mapCenter.lng]}
@@ -202,15 +208,11 @@ export default function DriverHomeView() {
           attribution='&copy; CARTO'
         />
         {driverPos && <RecenterMap lat={driverPos.lat} lng={driverPos.lng} />}
-
-        {/* Driver marker */}
         {driverPos && (
           <Marker position={[driverPos.lat, driverPos.lng]} icon={driverIcon}>
             <Popup>Your location</Popup>
           </Marker>
         )}
-
-        {/* Load pins */}
         {geoLoads.map((load) => (
           <Marker
             key={load.id}
@@ -230,45 +232,53 @@ export default function DriverHomeView() {
         ))}
       </MapContainer>
 
-      {/* Top bar overlay */}
+      {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-[1000] safe-top">
-        <div className="mx-3 mt-3 flex items-center justify-between">
-          {/* Location */}
-          <div className="flex items-center gap-2 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 border border-border shadow-lg">
-            <MapPin className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium truncate max-w-[140px]">
-              {driverPos ? 'Your Location' : 'Zimbabwe'}
-            </span>
-          </div>
-          <SubscriptionBadge />
+        <div className="mx-3 mt-3 flex items-center gap-2">
+          <AppSidebar role="driver" />
 
-          {/* Online toggle + filters */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 border border-border shadow-lg">
-              <span className={`text-[10px] font-bold ${online ? 'text-primary' : 'text-muted-foreground'}`}>
-                {online ? 'ONLINE' : 'OFFLINE'}
-              </span>
-              <Switch
-                checked={online}
-                onCheckedChange={setOnline}
-                className="h-4 w-8 data-[state=checked]:bg-green-500"
-              />
-            </div>
-            <DriverFilters filters={filters} onChange={setFilters} />
+          {/* Search bar */}
+          <div className="flex-1 flex items-center gap-1.5 bg-card/90 backdrop-blur-md rounded-full px-3 py-1.5 border border-border shadow-lg">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <Input
+              placeholder="Search loads, locations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-0 bg-transparent h-7 text-xs p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60"
+            />
           </div>
+
+          {/* Online toggle */}
+          <div className="flex items-center gap-1 bg-card/90 backdrop-blur-md rounded-full px-2.5 py-1.5 border border-border shadow-lg shrink-0">
+            <span className={`text-[9px] font-bold ${online ? 'text-green-500' : 'text-muted-foreground'}`}>
+              {online ? 'ON' : 'OFF'}
+            </span>
+            <Switch
+              checked={online}
+              onCheckedChange={setOnline}
+              className="h-4 w-7 data-[state=checked]:bg-green-500"
+            />
+          </div>
+
+          <DriverFilters filters={filters} onChange={setFilters} />
         </div>
       </div>
 
-      {/* Draggable bottom sheet */}
+      {/* Subscription badge */}
+      <div className="absolute top-14 right-3 z-[1000]">
+        <SubscriptionBadge />
+      </div>
+
+      {/* Bottom sheet */}
       <motion.div
         className="absolute bottom-0 left-0 right-0 z-[1000] bg-background rounded-t-2xl border-t border-border shadow-2xl"
         style={{ height: `${sheetHeight * 100}vh` }}
         animate={{ height: `${sheetHeight * 100}vh` }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       >
-        {/* Drag handle */}
+        {/* Handle */}
         <div
-          className="flex flex-col items-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
+          className="flex flex-col items-center pt-2 pb-1 cursor-pointer"
           onClick={toggleSheet}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -284,7 +294,7 @@ export default function DriverHomeView() {
           </div>
         </div>
 
-        {/* Load list */}
+        {/* List */}
         <div className="overflow-y-auto px-3 pb-24" style={{ height: `calc(${sheetHeight * 100}vh - 44px)` }}>
           {isLoading ? (
             <div className="flex justify-center py-8">
@@ -292,24 +302,48 @@ export default function DriverHomeView() {
             </div>
           ) : filteredLoads.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-center">
-              <p className="text-sm font-medium text-muted-foreground">No loads match your filters</p>
-              <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters</p>
+              <p className="text-sm font-medium text-muted-foreground">No loads match your criteria</p>
+              <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {filteredLoads.map((load: any) => (
-                <LoadCard
-                  key={load.id}
-                  load={load}
-                  onTap={() => setSelectedLoad(load)}
-                />
-              ))}
+            <div className="space-y-3">
+              {/* Recommended */}
+              {recommendedLoads.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2 px-1">
+                    <Sparkles className="h-3.5 w-3.5 text-warning" />
+                    <span className="text-xs font-bold text-warning">Recommended</span>
+                  </div>
+                  <div className="space-y-2">
+                    {recommendedLoads.map((load: any) => (
+                      <div key={`rec-${load.id}`} className="ring-1 ring-warning/20 rounded-xl">
+                        <LoadCard load={load} onTap={() => setSelectedLoad(load)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All loads */}
+              <div>
+                <p className="text-xs font-bold text-muted-foreground mb-2 px-1">
+                  Nearby Loads
+                </p>
+                <div className="space-y-2">
+                  {filteredLoads.map((load: any) => (
+                    <LoadCard
+                      key={load.id}
+                      load={load}
+                      onTap={() => setSelectedLoad(load)}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
       </motion.div>
 
-      {/* Load detail modal */}
       <LoadDetailModal
         load={selectedLoad}
         open={!!selectedLoad}

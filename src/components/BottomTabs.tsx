@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Package, MessageCircle, User, PlusCircle, ClipboardList, Search, Navigation } from 'lucide-react';
+import { Home, MessageCircle, PlusCircle, ClipboardList, Search, Navigation, Briefcase, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -20,13 +20,12 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
         { path: '/shipper/create', label: 'Create', icon: PlusCircle },
         { path: '/shipper/shipments', label: 'Shipments', icon: ClipboardList },
         { path: '/shipper/chat', label: 'Messages', icon: MessageCircle },
-        { path: '/shipper/profile', label: 'Profile', icon: User },
       ]
     : [
         { path: '/driver', label: 'Home', icon: Home },
-        { path: '/driver/loads', label: 'Loads', icon: Search },
+        { path: '/driver/work', label: 'Work', icon: Briefcase },
+        { path: '/driver/active', label: 'Active', icon: Compass },
         { path: '/driver/chat', label: 'Messages', icon: MessageCircle },
-        { path: '/driver/profile', label: 'Profile', icon: User },
       ];
 
   return (
