@@ -18,51 +18,55 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate user
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabase = createClient(
+    // Use anon client to validate the JWT via getClaims
+    const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { authorization: authHeader } } }
     );
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
+    const userEmail = (claimsData.claims.email as string) || "";
+
+    // Service role client for DB operations
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
     // Validate input
     const parsed = SubscribeSchema.safeParse(await req.json());
     if (!parsed.success) {
       return new Response(
         JSON.stringify({ error: parsed.error.flatten().fieldErrors }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const { phone_number, carrier_type } = parsed.data;
 
     // Check for existing active subscription
-    const { data: existingSub } = await supabase
+    const { data: existingSub } = await adminClient
       .from("driver_subscriptions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "active")
       .gte("expires_at", new Date().toISOString())
       .maybeSingle();
@@ -73,14 +77,10 @@ Deno.serve(async (req) => {
           error: "You already have an active subscription",
           expires_at: existingSub.expires_at,
         }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Map carrier to ContiPay merchant code
     const merchantCodes: Record<string, string> = {
       EcoCash: "EC",
       InnBucks: "IB",
@@ -90,29 +90,21 @@ Deno.serve(async (req) => {
 
     const apiKey = Deno.env.get("CONTIPAY_API_KEY")!;
     const apiSecret = Deno.env.get("CONTIPAY_API_SECRET")!;
-
-    // Base64 encode credentials for Basic Auth
     const credentials = btoa(`${apiKey}:${apiSecret}`);
-
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/contipay-webhook`;
 
-    // ContiPay direct payment payload
     const contiPayload = {
       merchantCode: merchantCodes[carrier_type] || "EC",
       currency: "USD",
       amount: 35.0,
       customerPhone: phone_number,
-      customerEmail: user.email || "",
+      customerEmail: userEmail,
       description: "HaulIQ Driver Monthly Subscription",
-      reference: `HAULIQ-SUB-${user.id.slice(0, 8)}-${Date.now()}`,
+      reference: `HAULIQ-SUB-${userId.slice(0, 8)}-${Date.now()}`,
       callbackUrl: webhookUrl,
-      metadata: {
-        user_id: user.id,
-        subscription_type: "monthly",
-      },
+      metadata: { user_id: userId, subscription_type: "monthly" },
     };
 
-    // Call ContiPay API
     const contiResponse = await fetch(
       "https://api.contipay.co.zw/v2/payment/direct",
       {
@@ -134,18 +126,14 @@ Deno.serve(async (req) => {
           error: "Payment initiation failed. Please try again.",
           details: contiResult.message || "Unknown error",
         }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Record pending subscription
-    const { error: insertError } = await supabase
+    const { error: insertError } = await adminClient
       .from("driver_subscriptions")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         status: "pending",
         amount: 35.0,
         carrier_type,
@@ -164,19 +152,13 @@ Deno.serve(async (req) => {
         message: `A payment prompt has been sent to ${phone_number}. Please enter your PIN on your phone to complete the $35 subscription.`,
         transaction_id: contiResult.transactionId || contiPayload.reference,
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Subscribe error:", err);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
