@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { HelpCircle, Mail, MessageSquare, FileText } from 'lucide-react';
 
-export default function HelpSupport({ onBack }: { onBack: () => void }) {
+export default function HelpSupport({ onBack }: { onBack?: () => void }) {
   const items = [
     { icon: FileText, label: 'FAQ', description: 'Frequently asked questions', action: () => window.open('https://hauliq.com/faq', '_blank') },
     { icon: MessageSquare, label: 'Live Chat', description: 'Chat with our support team', action: () => { const el = document.querySelector('[data-chatbot-trigger]') as HTMLButtonElement; if (el) el.click(); else alert('Use the Hauliq AI chatbot (bottom-right) for live support.'); } },

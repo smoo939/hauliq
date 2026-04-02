@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Truck } from 'lucide-react';
 
-export default function AboutView({ onBack }: { onBack: () => void }) {
+export default function AboutView({ onBack }: { onBack?: () => void }) {
   return (
     <div className="space-y-4">
       <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>

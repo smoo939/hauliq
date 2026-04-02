@@ -16,7 +16,7 @@ const carriers = [
   { value: 'Telecash', label: 'Telecash' },
 ];
 
-export default function PaymentMethods({ onBack }: { onBack: () => void }) {
+export default function PaymentMethods({ onBack }: { onBack?: () => void }) {
   const { user } = useAuth();
   const [phone, setPhone] = useState('');
   const [carrier, setCarrier] = useState('');
