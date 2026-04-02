@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 
-export default function RatingsView({ onBack, role }: { onBack: () => void; role: 'shipper' | 'driver' }) {
+export default function RatingsView({ onBack, role }: { onBack?: () => void; role: 'shipper' | 'driver' }) {
   const { user } = useAuth();
   const field = role === 'driver' ? 'reviewed_id' : 'reviewer_id';
 

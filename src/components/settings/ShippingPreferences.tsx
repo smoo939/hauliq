@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-export default function ShippingPreferences({ onBack }: { onBack: () => void }) {
+export default function ShippingPreferences({ onBack }: { onBack?: () => void }) {
   const [loadType, setLoadType] = useState('FTL');
   const [equipment, setEquipment] = useState('Flatbed');
 

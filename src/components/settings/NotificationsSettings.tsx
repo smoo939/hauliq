@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Bell, MessageSquare, Truck, DollarSign } from 'lucide-react';
 
-export default function NotificationsSettings({ onBack }: { onBack: () => void }) {
+export default function NotificationsSettings({ onBack }: { onBack?: () => void }) {
   const [pushEnabled, setPushEnabled] = useState(true);
   const [bidNotifs, setBidNotifs] = useState(true);
   const [chatNotifs, setChatNotifs] = useState(true);

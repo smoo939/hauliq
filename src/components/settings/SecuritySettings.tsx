@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function SecuritySettings({ onBack }: { onBack: () => void }) {
+export default function SecuritySettings({ onBack }: { onBack?: () => void }) {
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
 

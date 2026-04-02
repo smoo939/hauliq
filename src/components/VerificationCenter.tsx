@@ -205,7 +205,7 @@ function StepUpload({ title, instructions, docType, accept, isCamera, onComplete
   );
 }
 
-export default function VerificationCenter({ onBack }: { onBack: () => void }) {
+export default function VerificationCenter({ onBack }: { onBack?: () => void }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<VerifStep>('overview');

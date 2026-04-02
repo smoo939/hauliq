@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { MapPin, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function PreferredRoutes({ onBack }: { onBack: () => void }) {
+export default function PreferredRoutes({ onBack }: { onBack?: () => void }) {
   const [routes, setRoutes] = useState<{ from: string; to: string }[]>([]);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
