@@ -12,8 +12,22 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("[contipay-webhook] Missing env vars", {
+        hasUrl: !!supabaseUrl,
+        hasServiceRole: !!serviceRoleKey,
+      });
+      return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const payload = await req.json();
-    console.log("ContiPay webhook received:", JSON.stringify(payload));
+    console.log("[contipay-webhook] Received:", JSON.stringify(payload));
 
     const transactionId =
       payload.transactionId || payload.reference || payload.transaction_id;
@@ -26,18 +40,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use service role to update subscription regardless of RLS
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     if (status === "success" || status === "completed" || status === "paid") {
-      // Calculate 30-day expiry
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
-      // Update subscription to active
       const { data: sub, error: updateError } = await supabase
         .from("driver_subscriptions")
         .update({
@@ -61,7 +69,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create notification for the user
       if (sub) {
         await supabase.from("notifications").insert({
           user_id: sub.user_id,
