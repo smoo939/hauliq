@@ -152,8 +152,11 @@ export default function AppSidebar({ role }: AppSidebarProps) {
         </div>
 
         {/* Sticky bottom: dark mode + sign out */}
-        <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur-sm p-4 space-y-2">
-          <div className="flex items-center justify-between px-1 py-2">
+        <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur-sm p-3 space-y-1">
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="flex items-center justify-between w-full px-2 py-2.5 rounded-lg hover:bg-muted/50 transition-colors"
+          >
             <div className="flex items-center gap-2">
               {resolvedTheme === 'dark' ? (
                 <Moon className="h-4 w-4 text-muted-foreground" />
@@ -165,8 +168,9 @@ export default function AppSidebar({ role }: AppSidebarProps) {
             <Switch
               checked={resolvedTheme === 'dark'}
               onCheckedChange={(c) => setTheme(c ? 'dark' : 'light')}
+              className="pointer-events-none"
             />
-          </div>
+          </button>
 
           <Button
             variant="ghost"

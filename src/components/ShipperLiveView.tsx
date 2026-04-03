@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MapPin, ChevronUp, ChevronDown, Package, MessageCircle, XCircle, Navigation, Clock } from 'lucide-react';
+import AppSidebar from '@/components/AppSidebar';
 import { motion } from 'framer-motion';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
