@@ -19,19 +19,46 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+function getRequiredEnv(name: string): string | null {
+  const val = Deno.env.get(name);
+  if (!val) console.error(`[contipay-subscribe] Missing env: ${name}`);
+  return val || null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    // Validate all required env vars upfront
+    const supabaseUrl = getRequiredEnv("SUPABASE_URL");
+    const anonKey = getRequiredEnv("SUPABASE_ANON_KEY");
+    const serviceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+      console.error("[contipay-subscribe] Environment check failed", {
+        hasUrl: !!supabaseUrl,
+        hasAnon: !!anonKey,
+        hasServiceRole: !!serviceRoleKey,
+      });
+      return jsonResponse({ error: "Server misconfiguration" }, 500);
+    }
+
+    console.log("[contipay-subscribe] Env vars validated OK");
+
+    // Auth: extract token
     const authHeader =
       req.headers.get("authorization") ?? req.headers.get("Authorization");
 
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
+      console.error("[contipay-subscribe] No valid auth header present");
+      return jsonResponse({ error: "Unauthorized – missing auth token" }, 401);
     }
 
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+
+    // Parse body
     const parsed = SubscribeSchema.safeParse(await req.json());
     if (!parsed.success) {
       return jsonResponse(
@@ -40,55 +67,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      console.error("Missing Supabase environment variables");
-      return jsonResponse({ error: "Server misconfiguration" }, 500);
-    }
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
+    // Create admin client (service role) for DB operations
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const token = authHeader.replace(/^Bearer\s+/i, "");
+    // Validate user via service role getUser
+    const { data: userData, error: userError } =
+      await adminClient.auth.getUser(token);
 
-    let userId: string | null = null;
-    let userEmail = "";
-
-    const { data: claimsData, error: claimsError } = await userClient.auth
-      .getClaims(token);
-
-    if (claimsData?.claims?.sub) {
-      userId = String(claimsData.claims.sub);
-      userEmail = typeof claimsData.claims.email === "string"
-        ? claimsData.claims.email
-        : "";
+    if (userError || !userData?.user) {
+      console.error("[contipay-subscribe] Auth validation failed", {
+        error: userError?.message ?? "No user returned",
+      });
+      return jsonResponse({ error: "Unauthorized – invalid session" }, 401);
     }
 
-    if (!userId) {
-      const { data: userData, error: userError } = await userClient.auth.getUser(
-        token,
-      );
+    const userId = userData.user.id;
+    const userEmail = userData.user.email ?? "";
 
-      if (userData?.user) {
-        userId = userData.user.id;
-        userEmail = userData.user.email ?? "";
-      } else {
-        console.error("Subscription auth validation failed", {
-          claimsError: claimsError?.message ?? null,
-          userError: userError?.message ?? null,
-        });
-        return jsonResponse({ error: "Unauthorized" }, 401);
-      }
-    }
+    console.log("[contipay-subscribe] User authenticated:", userId.slice(0, 8));
 
     const { phone_number, carrier_type } = parsed.data;
 
+    // Check existing active subscription
     const { data: existingSub, error: existingSubError } = await adminClient
       .from("driver_subscriptions")
       .select("id, expires_at")
@@ -112,6 +112,7 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ContiPay integration
     const merchantCodes: Record<string, string> = {
       EcoCash: "EC",
       InnBucks: "IB",
@@ -119,11 +120,10 @@ Deno.serve(async (req) => {
       Telecash: "TC",
     };
 
-    const apiKey = Deno.env.get("CONTIPAY_API_KEY");
-    const apiSecret = Deno.env.get("CONTIPAY_API_SECRET");
+    const apiKey = getRequiredEnv("CONTIPAY_API_KEY");
+    const apiSecret = getRequiredEnv("CONTIPAY_API_SECRET");
 
     if (!apiKey || !apiSecret) {
-      console.error("Missing ContiPay credentials");
       return jsonResponse({ error: "Payment service is not configured" }, 500);
     }
 

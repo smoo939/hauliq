@@ -146,9 +146,10 @@ ${dbContext || "No live data available — user may not be fully set up yet."}
 - If you don't know something specific, say so — don't fabricate data
 
 ## RESPONSE FORMAT
-- Keep responses concise (2-4 paragraphs max)
-- Use bullet points for lists
+- Keep responses SHORT: 1-3 sentences for simple questions, 2-3 bullet points max for lists
+- Never write more than 4 lines unless the user explicitly asks for detail
 - Bold key numbers/prices
+- Be direct — skip preambles like "Great question!" or "Sure, let me explain"
 - When suggesting actions, be specific ("tap 'Post Load' on your dashboard")`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MapPin, ChevronUp, ChevronDown, Package, MessageCircle, XCircle, Navigation, Clock } from 'lucide-react';
+import AppSidebar from '@/components/AppSidebar';
 import { motion } from 'framer-motion';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -187,9 +188,12 @@ export default function ShipperLiveView() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-[1000] safe-top">
         <div className="mx-3 mt-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 border border-border shadow-lg">
-            <Navigation className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold">Live Control</span>
+          <div className="flex items-center gap-2">
+            <AppSidebar role="shipper" />
+            <div className="flex items-center gap-2 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 border border-border shadow-lg">
+              <Navigation className="h-4 w-4 text-primary" />
+              <span className="text-xs font-semibold">Live Control</span>
+            </div>
           </div>
           <Badge variant="outline" className="bg-card/90 backdrop-blur-md border-border shadow-lg text-[10px]">
             {loads?.length || 0} active
