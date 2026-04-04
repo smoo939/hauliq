@@ -171,8 +171,25 @@ export default function HauliqAIChatbot() {
           userId: user?.id,
           fullName: profile?.full_name,
         },
-        onDelta: upsertAssistant,
-        onDone: () => setLoading(false),
+        onDelta: (chunk) => {
+          upsertAssistant(chunk);
+        },
+        onDone: () => {
+          // If no content was received, show fallback
+          if (!assistantSoFar.trim()) {
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === 'assistant' && !last.content.trim()) {
+                return prev.slice(0, -1).concat({ role: 'assistant', content: '⚠️ No response received. Please try again.' });
+              }
+              if (last?.role !== 'assistant') {
+                return [...prev, { role: 'assistant', content: '⚠️ No response received. Please try again.' }];
+              }
+              return prev;
+            });
+          }
+          setLoading(false);
+        },
         onError: (errMsg) => {
           setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errMsg}` }]);
           setLoading(false);
