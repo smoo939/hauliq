@@ -78,7 +78,7 @@ export default function AppSidebar({ role }: AppSidebarProps) {
     { icon: User, label: 'Profile', path: `${base}/profile` },
     { icon: Package, label: 'Shipping Preferences', path: `${base}/shipping-prefs` },
     { icon: FileText, label: 'Documents', path: `${base}/documents` },
-    { icon: Star, label: 'Carrier Ratings', path: `${base}/ratings` },
+    { icon: Star, label: 'Shipper Ratings', path: `${base}/ratings` },
     { icon: Bell, label: 'Notifications', path: `${base}/notifications` },
     { icon: Lock, label: 'Security', path: `${base}/security` },
     { icon: HelpCircle, label: 'Help & Support', path: `${base}/help` },

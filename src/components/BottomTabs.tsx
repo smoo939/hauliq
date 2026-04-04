@@ -18,7 +18,7 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
     ? [
         { path: '/shipper', label: 'Live', icon: Navigation, highlight: true },
         { path: '/shipper/create', label: 'Create', icon: PlusCircle },
-        { path: '/shipper/shipments', label: 'Shipments', icon: ClipboardList },
+        { path: '/shipper/history', label: 'History', icon: ClipboardList },
         { path: '/shipper/chat', label: 'Messages', icon: MessageCircle },
       ]
     : [

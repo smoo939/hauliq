@@ -22,8 +22,7 @@ export default function RatingsView({ onBack, role }: { onBack?: () => void; rol
 
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary font-medium hover:underline">← Back to Settings</button>
-      <h2 className="text-lg font-semibold">{role === 'driver' ? 'My Ratings' : 'Carrier Ratings'}</h2>
+      <h2 className="text-lg font-semibold">{role === 'driver' ? 'My Ratings' : 'Shipper Ratings'}</h2>
       <Card>
         <CardContent className="p-5 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">

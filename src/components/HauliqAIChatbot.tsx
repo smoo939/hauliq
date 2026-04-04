@@ -171,8 +171,25 @@ export default function HauliqAIChatbot() {
           userId: user?.id,
           fullName: profile?.full_name,
         },
-        onDelta: upsertAssistant,
-        onDone: () => setLoading(false),
+        onDelta: (chunk) => {
+          upsertAssistant(chunk);
+        },
+        onDone: () => {
+          // If no content was received, show fallback
+          if (!assistantSoFar.trim()) {
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === 'assistant' && !last.content.trim()) {
+                return prev.slice(0, -1).concat({ role: 'assistant', content: '⚠️ No response received. Please try again.' });
+              }
+              if (last?.role !== 'assistant') {
+                return [...prev, { role: 'assistant', content: '⚠️ No response received. Please try again.' }];
+              }
+              return prev;
+            });
+          }
+          setLoading(false);
+        },
         onError: (errMsg) => {
           setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errMsg}` }]);
           setLoading(false);
@@ -221,6 +238,9 @@ export default function HauliqAIChatbot() {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/80">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                   <Sparkles className="h-4 w-4 text-primary-foreground" />
@@ -232,9 +252,7 @@ export default function HauliqAIChatbot() {
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+              <div className="w-8" />
             </div>
 
             {/* Messages */}
