@@ -221,6 +221,9 @@ export default function HauliqAIChatbot() {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/80">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                   <Sparkles className="h-4 w-4 text-primary-foreground" />
@@ -232,9 +235,7 @@ export default function HauliqAIChatbot() {
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+              <div className="w-8" />
             </div>
 
             {/* Messages */}
