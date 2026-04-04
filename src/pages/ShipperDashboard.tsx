@@ -12,7 +12,7 @@ import NotificationsSettings from '@/components/settings/NotificationsSettings';
 import SecuritySettings from '@/components/settings/SecuritySettings';
 import RatingsView from '@/components/settings/RatingsView';
 import ShippingPreferences from '@/components/settings/ShippingPreferences';
-import PaymentMethods from '@/components/settings/PaymentMethods';
+
 import HelpSupport from '@/components/settings/HelpSupport';
 import AboutView from '@/components/settings/AboutView';
 import SubPageWrapper from '@/components/settings/SubPageWrapper';
