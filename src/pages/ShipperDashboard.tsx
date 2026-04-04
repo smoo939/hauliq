@@ -66,7 +66,7 @@ export default function ShipperDashboard() {
         <Route index element={<ShipperLiveView />} />
         <Route path="create" element={<PageWrapper title="Create Load"><main className="px-4 py-4"><ShipperCreateLoad /></main></PageWrapper>} />
         <Route path="shipments" element={<PageWrapper title="Shipments"><main className="px-4 py-4"><ShipperShipmentsView /></main></PageWrapper>} />
-        <Route path="history" element={<PageWrapper title="Load History"><main className="px-4 py-4"><LoadHistoryView /></main></PageWrapper>} />
+        <Route path="history" element={<PageWrapper title="Load History"><main className="px-4 py-4"><LoadHistoryView role="shipper" /></main></PageWrapper>} />
         <Route path="chat" element={<PageWrapper title="Messages"><main className="px-4 py-4"><ChatListView /></main></PageWrapper>} />
 
         {/* Direct sidebar routes */}
