@@ -12,6 +12,24 @@ const SubscribeSchema = z.object({
   carrier_type: z.enum(["EcoCash", "InnBucks", "OneMoney", "Telecash"]),
 });
 
+const SUBSCRIPTION_AMOUNT = 35.0;
+const CONFIG_ERRORS = {
+  supabaseUrl: "CRITICAL: SUPABASE_URL_MISSING",
+  supabaseAnonKey: "CRITICAL: SUPABASE_ANON_KEY_MISSING",
+  serviceRoleKey: "CRITICAL: SUPABASE_SERVICE_ROLE_KEY_MISSING",
+  contipayKey: "CRITICAL: CONTIPAY_TEST_KEY_MISSING",
+  contipaySecret: "CRITICAL: CONTIPAY_API_SECRET_MISSING",
+} as const;
+
+type RuntimeEnv = {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  serviceRoleKey: string;
+  contipayApiKey: string;
+  contipayApiSecret: string;
+  usingTestKey: boolean;
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -19,10 +37,94 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function getRequiredEnv(name: string): string | null {
-  const val = Deno.env.get(name);
-  if (!val) console.error(`[contipay-subscribe] Missing env: ${name}`);
-  return val || null;
+function getAuthorizationHeader(req: Request): string {
+  return req.headers.get("Authorization") ?? req.headers.get("authorization") ?? "";
+}
+
+function getTrimmedEnv(name: string): string {
+  return Deno.env.get(name)?.trim() ?? "";
+}
+
+function resolveRuntimeEnv(req: Request): RuntimeEnv {
+  const supabaseUrl = getTrimmedEnv("SUPABASE_URL");
+  const supabaseAnonKey = getTrimmedEnv("SUPABASE_ANON_KEY");
+  const serviceRoleKey = getTrimmedEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const contipayTestKey = getTrimmedEnv("CONTIPAY_TEST_KEY");
+  const contipayApiKey = getTrimmedEnv("CONTIPAY_API_KEY");
+  const contipayApiSecret = getTrimmedEnv("CONTIPAY_API_SECRET");
+
+  console.log("[contipay-subscribe] Runtime env presence", {
+    hasSupabaseUrl: Boolean(supabaseUrl),
+    hasSupabaseAnonKey: Boolean(supabaseAnonKey),
+    hasServiceRoleKey: Boolean(serviceRoleKey),
+    hasContipayTestKey: Boolean(contipayTestKey),
+    hasContipayApiKey: Boolean(contipayApiKey),
+    hasContipayApiSecret: Boolean(contipayApiSecret),
+    hasAuthorizationHeader: Boolean(getAuthorizationHeader(req)),
+  });
+
+  if (!supabaseUrl) {
+    throw new Error(CONFIG_ERRORS.supabaseUrl);
+  }
+
+  if (!supabaseAnonKey) {
+    throw new Error(CONFIG_ERRORS.supabaseAnonKey);
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error(CONFIG_ERRORS.serviceRoleKey);
+  }
+
+  if (!contipayTestKey && !contipayApiKey) {
+    throw new Error(CONFIG_ERRORS.contipayKey);
+  }
+
+  if (!contipayApiSecret) {
+    throw new Error(CONFIG_ERRORS.contipaySecret);
+  }
+
+  return {
+    supabaseUrl,
+    supabaseAnonKey,
+    serviceRoleKey,
+    contipayApiKey: contipayTestKey || contipayApiKey,
+    contipayApiSecret,
+    usingTestKey: Boolean(contipayTestKey),
+  };
+}
+
+function createUserClient(req: Request) {
+  return createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    {
+      global: {
+        headers: {
+          Authorization: getAuthorizationHeader(req),
+        },
+      },
+    },
+  );
+}
+
+function createAdminClient(req: Request) {
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+
+  if (!serviceRoleKey) {
+    throw new Error(CONFIG_ERRORS.serviceRoleKey);
+  }
+
+  return createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    {
+      global: {
+        headers: {
+          Authorization: getAuthorizationHeader(req),
+        },
+      },
+    },
+  );
 }
 
 Deno.serve(async (req) => {
@@ -31,25 +133,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate all required env vars upfront
-    const supabaseUrl = getRequiredEnv("SUPABASE_URL");
-    const anonKey = getRequiredEnv("SUPABASE_ANON_KEY");
-    const serviceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      console.error("[contipay-subscribe] Environment check failed", {
-        hasUrl: !!supabaseUrl,
-        hasAnon: !!anonKey,
-        hasServiceRole: !!serviceRoleKey,
-      });
-      return jsonResponse({ error: "Server misconfiguration" }, 500);
-    }
-
-    console.log("[contipay-subscribe] Env vars validated OK");
-
-    // Auth: extract token
-    const authHeader =
-      req.headers.get("authorization") ?? req.headers.get("Authorization");
+    const runtimeEnv = resolveRuntimeEnv(req);
+    const authHeader = getAuthorizationHeader(req);
 
     if (!authHeader?.startsWith("Bearer ")) {
       console.error("[contipay-subscribe] No valid auth header present");
@@ -67,12 +152,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create admin client (service role) for DB operations
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const userClient = createUserClient(req);
+    const adminClient = createAdminClient(req);
 
-    // Validate user via service role getUser
     const { data: userData, error: userError } =
-      await adminClient.auth.getUser(token);
+      await userClient.auth.getUser(token);
 
     if (userError || !userData?.user) {
       console.error("[contipay-subscribe] Auth validation failed", {
@@ -120,20 +204,20 @@ Deno.serve(async (req) => {
       Telecash: "TC",
     };
 
-    const apiKey = getRequiredEnv("CONTIPAY_API_KEY");
-    const apiSecret = getRequiredEnv("CONTIPAY_API_SECRET");
+    console.log("[contipay-subscribe] ContiPay credentials resolved", {
+      usingTestKey: runtimeEnv.usingTestKey,
+      hasApiSecret: Boolean(runtimeEnv.contipayApiSecret),
+    });
 
-    if (!apiKey || !apiSecret) {
-      return jsonResponse({ error: "Payment service is not configured" }, 500);
-    }
-
-    const credentials = btoa(`${apiKey}:${apiSecret}`);
-    const webhookUrl = `${supabaseUrl}/functions/v1/contipay-webhook`;
+    const credentials = btoa(
+      `${runtimeEnv.contipayApiKey}:${runtimeEnv.contipayApiSecret}`,
+    );
+    const webhookUrl = `${runtimeEnv.supabaseUrl}/functions/v1/contipay-webhook`;
 
     const contiPayload = {
       merchantCode: merchantCodes[carrier_type] || "EC",
       currency: "USD",
-      amount: 35.0,
+      amount: SUBSCRIPTION_AMOUNT,
       customerPhone: phone_number,
       customerEmail: userEmail,
       description: "Hauliq Driver Monthly Subscription",
@@ -177,7 +261,7 @@ Deno.serve(async (req) => {
       .insert({
         user_id: userId,
         status: "pending",
-        amount: 35.0,
+        amount: SUBSCRIPTION_AMOUNT,
         carrier_type,
         phone_number,
         contipay_transaction_id:
@@ -192,11 +276,18 @@ Deno.serve(async (req) => {
     return jsonResponse({
       success: true,
       message:
-        `A payment prompt has been sent to ${phone_number}. Please enter your PIN on your phone to complete the $35 subscription.`,
+        `A payment prompt has been sent to ${phone_number}. Please enter your PIN on your phone to complete the $${SUBSCRIPTION_AMOUNT} subscription.`,
       transaction_id: contiResult.transactionId || contiPayload.reference,
     });
   } catch (err) {
-    console.error("Subscribe error", err);
+    const message = err instanceof Error ? err.message : String(err);
+
+    if (Object.values(CONFIG_ERRORS).includes(message as (typeof CONFIG_ERRORS)[keyof typeof CONFIG_ERRORS])) {
+      console.error("[contipay-subscribe] Configuration error", { error: message });
+      return jsonResponse({ error: message }, 500);
+    }
+
+    console.error("Subscribe error", { error: message });
     return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
