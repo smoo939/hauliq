@@ -12,7 +12,7 @@ import NotificationsSettings from '@/components/settings/NotificationsSettings';
 import SecuritySettings from '@/components/settings/SecuritySettings';
 import RatingsView from '@/components/settings/RatingsView';
 import ShippingPreferences from '@/components/settings/ShippingPreferences';
-import PaymentMethods from '@/components/settings/PaymentMethods';
+
 import HelpSupport from '@/components/settings/HelpSupport';
 import AboutView from '@/components/settings/AboutView';
 import SubPageWrapper from '@/components/settings/SubPageWrapper';
@@ -70,8 +70,8 @@ export default function ShipperDashboard() {
 
         {/* Direct sidebar routes */}
         <Route path="profile" element={<SubPageWrapper title="Profile"><ProfileView /></SubPageWrapper>} />
-        <Route path="payments" element={<SubPageWrapper title="Payment Methods"><PaymentMethods /></SubPageWrapper>} />
-        <Route path="billing" element={<SubPageWrapper title="Billing"><LoadHistoryView role="shipper" /></SubPageWrapper>} />
+
+
         <Route path="shipping-prefs" element={<SubPageWrapper title="Shipping Preferences"><ShippingPreferences /></SubPageWrapper>} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="ratings" element={<SubPageWrapper title="Carrier Ratings"><RatingsView role="shipper" /></SubPageWrapper>} />

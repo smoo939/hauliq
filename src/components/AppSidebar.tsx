@@ -76,8 +76,6 @@ export default function AppSidebar({ role }: AppSidebarProps) {
 
   const shipperItems = [
     { icon: User, label: 'Profile', path: `${base}/profile` },
-    { icon: CreditCard, label: 'Payment Methods', path: `${base}/payments` },
-    { icon: DollarSign, label: 'Billing', path: `${base}/billing` },
     { icon: Package, label: 'Shipping Preferences', path: `${base}/shipping-prefs` },
     { icon: FileText, label: 'Documents', path: `${base}/documents` },
     { icon: Star, label: 'Carrier Ratings', path: `${base}/ratings` },
