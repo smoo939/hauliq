@@ -74,7 +74,7 @@ export default function ShipperDashboard() {
 
         <Route path="shipping-prefs" element={<SubPageWrapper title="Shipping Preferences"><ShippingPreferences /></SubPageWrapper>} />
         <Route path="documents" element={<DocumentsPage />} />
-        <Route path="ratings" element={<SubPageWrapper title="Carrier Ratings"><RatingsView role="shipper" /></SubPageWrapper>} />
+        <Route path="ratings" element={<SubPageWrapper title="Shipper Ratings"><RatingsView role="shipper" /></SubPageWrapper>} />
         <Route path="notifications" element={<SubPageWrapper title="Notifications"><NotificationsSettings /></SubPageWrapper>} />
         <Route path="security" element={<SubPageWrapper title="Security"><SecuritySettings /></SubPageWrapper>} />
         <Route path="help" element={<SubPageWrapper title="Help & Support"><HelpSupport /></SubPageWrapper>} />
