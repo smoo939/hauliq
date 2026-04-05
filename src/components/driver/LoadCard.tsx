@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Package, Clock, Star, ChevronRight } from 'lucide-react';
+import { MapPin, Package, Clock, ChevronRight, Flame } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface LoadCardProps {
@@ -17,16 +17,29 @@ interface LoadCardProps {
     pickup_date: string | null;
   };
   onTap: () => void;
+  matchScore?: number;
+  isRecommended?: boolean;
 }
 
-export default function LoadCard({ load, onTap }: LoadCardProps) {
+export default function LoadCard({ load, onTap, matchScore, isRecommended }: LoadCardProps) {
   return (
     <button
       onClick={onTap}
-      className="w-full text-left bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform"
+      className={`w-full text-left bg-card border rounded-xl p-3 active:scale-[0.98] transition-all ${
+        isRecommended
+          ? 'border-amber-500/30 shadow-[0_0_15px_-3px_rgba(245,158,11,0.15)]'
+          : 'border-border'
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0 space-y-1.5">
+          {/* Match score badge */}
+          {matchScore != null && matchScore >= 40 && (
+            <Badge className="text-[9px] px-1.5 py-0 h-4 gap-0.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0 mb-0.5">
+              <Flame className="h-2.5 w-2.5" /> {matchScore}% Match
+            </Badge>
+          )}
+
           {/* Route */}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <div className="flex flex-col items-center gap-0.5">
