@@ -28,7 +28,6 @@ const deliveryIcon = new L.DivIcon({
   iconAnchor: [13, 13],
   className: '',
 });
-});
 
 interface RouteInfo {
   distanceKm: number;
