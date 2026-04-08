@@ -289,13 +289,12 @@ export default function HauliqAIChatbot() {
 
               {loading && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-2">
-                    <span className="flex gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
+                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 flex items-center">
+                    <span className="flex gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+                      <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+                      <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
                     </span>
-                    <span className="text-xs text-muted-foreground">Hauliq AI is responding...</span>
                   </div>
                 </div>
               )}

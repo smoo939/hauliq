@@ -111,3 +111,18 @@
     border: 1px solid hsl(var(--glass-border));
   }
 }
+
+/* Dark mode map tile enhancement for LocationIQ raster tiles */
+.dark .leaflet-tile-pane {
+  filter: brightness(0.82) contrast(1.25) saturate(0.3);
+}
+.dark .leaflet-tile-pane img {
+  mix-blend-mode: normal;
+}
+/* Ensure map labels stay crisp */
+.dark .leaflet-container {
+  background: #0D1117;
+}
+.leaflet-container {
+  background: #f0f0f0;
+}
