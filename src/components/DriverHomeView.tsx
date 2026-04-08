@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
+import DynamicTileLayer from '@/components/map/DynamicTileLayer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Badge } from '@/components/ui/badge';
@@ -243,11 +244,7 @@ export default function DriverHomeView() {
         style={{ height: '100%', width: '100%' }}
         zoomControl={false}
       >
-        {/* Use CartoDB Voyager for a clean logistics-style map */}
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        />
+        <DynamicTileLayer />
         {driverPos && <RecenterMap lat={driverPos.lat} lng={driverPos.lng} />}
         {driverPos && (
           <Marker position={[driverPos.lat, driverPos.lng]} icon={driverIcon}>
