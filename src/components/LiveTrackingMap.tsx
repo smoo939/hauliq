@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import DynamicTileLayer from '@/components/map/DynamicTileLayer';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Navigation, Clock, Timer } from 'lucide-react';
@@ -168,10 +169,7 @@ export default function LiveTrackingMap({ loadId, driverId, pickupLocation, deli
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; CARTO'
-          />
+          <DynamicTileLayer />
           {position && (
             <>
               <Marker position={[position.lat, position.lng]} icon={truckIcon}>

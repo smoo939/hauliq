@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Navigation, DollarSign } from 'lucide-react';
+import DynamicTileLayer from '@/components/map/DynamicTileLayer';
+import { getORSRoute } from '@/hooks/useMapTiles';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -61,7 +63,18 @@ async function geocodeLocation(location: string): Promise<Coords | null> {
   }
 }
 
-async function getOSRMRoute(from: Coords, to: Coords): Promise<RouteInfo | null> {
+async function getRoute(from: Coords, to: Coords): Promise<RouteInfo | null> {
+  // Try ORS first (HGV profile)
+  const orsResult = await getORSRoute(from.lng, from.lat, to.lng, to.lat);
+  if (orsResult) {
+    return {
+      distanceKm: orsResult.distanceKm,
+      durationHours: orsResult.durationHours,
+      suggestedPrice: Math.round(orsResult.distanceKm * RATE_PER_KM),
+      routeCoords: orsResult.coords,
+    };
+  }
+  // Fallback to OSRM
   try {
     const res = await fetch(
       `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`
@@ -71,16 +84,15 @@ async function getOSRMRoute(from: Coords, to: Coords): Promise<RouteInfo | null>
       const route = data.routes[0];
       const distanceKm = Math.round(route.distance / 1000);
       const durationHours = Math.round((route.duration / 3600) * 10) / 10;
-      const suggestedPrice = Math.round(distanceKm * RATE_PER_KM);
-      const routeCoords: [number, number][] = route.geometry.coordinates.map(
-        (c: [number, number]) => [c[1], c[0]] as [number, number]
-      );
-      return { distanceKm, durationHours, suggestedPrice, routeCoords };
+      return {
+        distanceKm,
+        durationHours,
+        suggestedPrice: Math.round(distanceKm * RATE_PER_KM),
+        routeCoords: route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]] as [number, number]),
+      };
     }
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function FitBounds({ coords }: { coords: [number, number][] }) {
@@ -131,7 +143,7 @@ export default function RouteMap({ pickup, delivery, onRouteCalculated, classNam
       setPickupCoords(pCoords);
       setDeliveryCoords(dCoords);
 
-      const route = await getOSRMRoute(pCoords, dCoords);
+      const route = await getRoute(pCoords, dCoords);
       if (route) {
         setRouteInfo(route);
         onRouteCalculated?.(route);
@@ -160,7 +172,7 @@ export default function RouteMap({ pickup, delivery, onRouteCalculated, classNam
           zoomControl={false}
           attributionControl={false}
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://carto.com/">CARTO</a>' />
+          <DynamicTileLayer />
           {pickupCoords && (
             <Marker position={[pickupCoords.lat, pickupCoords.lng]} icon={pickupIcon}>
               <Popup>{pickup}</Popup>

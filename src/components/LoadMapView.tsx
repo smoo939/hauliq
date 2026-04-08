@@ -1,7 +1,8 @@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, Marker, Popup } from 'react-leaflet';
+import DynamicTileLayer from '@/components/map/DynamicTileLayer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useState } from 'react';
@@ -90,10 +91,7 @@ export default function LoadMapView({ role }: { role: 'shipper' | 'driver' }) {
           style={{ height: '100%', width: '100%' }}
           zoomControl={true}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          />
+          <DynamicTileLayer />
           {geoLoads.map((load) => (
             <Marker key={load.id} position={[load.lat, load.lng]}>
               <Popup>
