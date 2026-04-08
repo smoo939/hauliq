@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Navigation, DollarSign } from 'lucide-react';
+import DynamicTileLayer from '@/components/map/DynamicTileLayer';
+import { getORSRoute } from '@/hooks/useMapTiles';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -13,22 +15,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const pickupIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  className: 'hue-rotate-[120deg]',
+const pickupIcon = new L.DivIcon({
+  html: `<div style="background:hsl(221,89%,55%);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(37,99,235,0.4);"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="5"/></svg></div>`,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+  className: '',
 });
 
-const deliveryIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  className: 'hue-rotate-[0deg]',
+const deliveryIcon = new L.DivIcon({
+  html: `<div style="background:hsl(152,69%,40%);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(34,197,94,0.4);"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>`,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+  className: '',
 });
 
 interface RouteInfo {
@@ -61,7 +59,18 @@ async function geocodeLocation(location: string): Promise<Coords | null> {
   }
 }
 
-async function getOSRMRoute(from: Coords, to: Coords): Promise<RouteInfo | null> {
+async function getRoute(from: Coords, to: Coords): Promise<RouteInfo | null> {
+  // Try ORS first (HGV profile)
+  const orsResult = await getORSRoute(from.lng, from.lat, to.lng, to.lat);
+  if (orsResult) {
+    return {
+      distanceKm: orsResult.distanceKm,
+      durationHours: orsResult.durationHours,
+      suggestedPrice: Math.round(orsResult.distanceKm * RATE_PER_KM),
+      routeCoords: orsResult.coords,
+    };
+  }
+  // Fallback to OSRM
   try {
     const res = await fetch(
       `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`
@@ -71,16 +80,15 @@ async function getOSRMRoute(from: Coords, to: Coords): Promise<RouteInfo | null>
       const route = data.routes[0];
       const distanceKm = Math.round(route.distance / 1000);
       const durationHours = Math.round((route.duration / 3600) * 10) / 10;
-      const suggestedPrice = Math.round(distanceKm * RATE_PER_KM);
-      const routeCoords: [number, number][] = route.geometry.coordinates.map(
-        (c: [number, number]) => [c[1], c[0]] as [number, number]
-      );
-      return { distanceKm, durationHours, suggestedPrice, routeCoords };
+      return {
+        distanceKm,
+        durationHours,
+        suggestedPrice: Math.round(distanceKm * RATE_PER_KM),
+        routeCoords: route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]] as [number, number]),
+      };
     }
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function FitBounds({ coords }: { coords: [number, number][] }) {
@@ -131,7 +139,7 @@ export default function RouteMap({ pickup, delivery, onRouteCalculated, classNam
       setPickupCoords(pCoords);
       setDeliveryCoords(dCoords);
 
-      const route = await getOSRMRoute(pCoords, dCoords);
+      const route = await getRoute(pCoords, dCoords);
       if (route) {
         setRouteInfo(route);
         onRouteCalculated?.(route);
@@ -160,7 +168,7 @@ export default function RouteMap({ pickup, delivery, onRouteCalculated, classNam
           zoomControl={false}
           attributionControl={false}
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://carto.com/">CARTO</a>' />
+          <DynamicTileLayer />
           {pickupCoords && (
             <Marker position={[pickupCoords.lat, pickupCoords.lng]} icon={pickupIcon}>
               <Popup>{pickup}</Popup>
@@ -175,7 +183,7 @@ export default function RouteMap({ pickup, delivery, onRouteCalculated, classNam
             <>
               <Polyline
                 positions={routeInfo.routeCoords}
-                pathOptions={{ color: 'hsl(221, 89%, 55%)', weight: 4, opacity: 0.8 }}
+                pathOptions={{ color: 'hsl(221, 89%, 55%)', weight: 6, opacity: 0.85 }}
               />
               <FitBounds coords={routeInfo.routeCoords} />
             </>

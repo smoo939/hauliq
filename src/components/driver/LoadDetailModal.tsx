@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
+import BackhaulLoads from './BackhaulLoads';
 
 interface LoadDetailModalProps {
   load: any | null;
@@ -135,6 +136,14 @@ export default function LoadDetailModal({ load, open, onClose, matchScore }: Loa
               <div><p className="text-xs text-muted-foreground mb-1">Description</p><p className="text-sm">{load.description}</p></div>
             )}
 
+            {/* Backhaul / Return Load Intelligence */}
+            <BackhaulLoads
+              deliveryLocation={load.delivery_location}
+              originLocation={load.pickup_location}
+              forwardPrice={load.price || 0}
+              equipmentType={load.equipment_type}
+            />
+
             {/* Bid form */}
             {showBidForm && (
               <div className="bg-muted rounded-xl p-4 space-y-3">
@@ -149,7 +158,7 @@ export default function LoadDetailModal({ load, open, onClose, matchScore }: Loa
             )}
           </div>
 
-          {/* Sticky actions - no subscription gate in beta */}
+          {/* Sticky actions */}
           <div className="border-t border-border p-4 bg-card space-y-2">
             <div className="flex gap-2">
               <Button onClick={handleAccept} disabled={submitting} className="flex-1 h-12 text-sm font-bold">
