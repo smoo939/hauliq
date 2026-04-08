@@ -183,7 +183,7 @@ export default function RouteMap({ pickup, delivery, onRouteCalculated, classNam
             <>
               <Polyline
                 positions={routeInfo.routeCoords}
-                pathOptions={{ color: 'hsl(221, 89%, 55%)', weight: 4, opacity: 0.8 }}
+                pathOptions={{ color: 'hsl(221, 89%, 55%)', weight: 6, opacity: 0.85 }}
               />
               <FitBounds coords={routeInfo.routeCoords} />
             </>
