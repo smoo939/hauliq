@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import RouteMap from '@/components/RouteMap';
 import CargoPhotoUpload from '@/components/CargoPhotoUpload';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import { useLoadDraft } from '@/hooks/useLoadDraft';
+import { analytics } from '@/lib/analytics';
 
 // AI truck recommendation based on cargo type and weight
 function recommendTruck(weight: number | null, description: string): string | null {
@@ -40,6 +41,11 @@ export default function ShipperCreateLoad() {
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationHours: number; suggestedPrice: number } | null>(null);
   const [aiDescLoading, setAiDescLoading] = useState(false);
   const [truckSuggestion, setTruckSuggestion] = useState<string | null>(null);
+  const [aiPriceWasApplied, setAiPriceWasApplied] = useState(false);
+
+  useEffect(() => {
+    analytics.loadFormStarted({ has_draft: hasDraft });
+  }, []);  
 
   const createLoad = useMutation({
     mutationFn: async (form: any) => {
@@ -53,15 +59,31 @@ export default function ShipperCreateLoad() {
       } as any);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, form) => {
+      analytics.loadPosted({
+        route: `${form.pickup_location} → ${form.delivery_location}`,
+        price: parseFloat(form.price),
+        load_type: form.load_type || 'FTL',
+        equipment_type: form.equipment_type || '',
+        weight_kg: form.weight_lbs ? parseFloat(form.weight_lbs) : null,
+        is_urgent: !!form.urgent,
+        has_description: !!form.description,
+        has_photos: (cargoPhotos.length > 0),
+        ai_price_used: aiPriceWasApplied,
+        distance_km: routeInfo?.distanceKm ?? null,
+      });
       queryClient.invalidateQueries({ queryKey: ['shipper-loads'] });
       toast.success('Load posted successfully!');
       clearDraft();
       setCargoPhotos([]);
       setRouteInfo(null);
       setTruckSuggestion(null);
+      setAiPriceWasApplied(false);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any) => {
+      analytics.apiError({ context: 'load_post', message: err.message });
+      toast.error(err.message);
+    },
   });
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
@@ -80,6 +102,11 @@ export default function ShipperCreateLoad() {
       toast.error('Add a title and route first');
       return;
     }
+    analytics.aiDescriptionGenerated({
+      route: `${draft.pickup_location} → ${draft.delivery_location}`,
+      has_weight: !!draft.weight_lbs,
+      has_equipment: !!draft.equipment_type,
+    });
     setAiDescLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-chatbot', {
@@ -238,7 +265,11 @@ export default function ShipperCreateLoad() {
                   variant="ghost"
                   size="sm"
                   className="text-[10px] h-6 px-2"
-                  onClick={() => updateField('price', String(aiPriceSuggestion))}
+                  onClick={() => {
+                    analytics.aiPriceApplied({ suggested_price: aiPriceSuggestion!, route: `${draft.pickup_location} → ${draft.delivery_location}` });
+                    setAiPriceWasApplied(true);
+                    updateField('price', String(aiPriceSuggestion));
+                  }}
                 >
                   Apply
                 </Button>

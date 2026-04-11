@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, MessageCircle, PlusCircle, ClipboardList, Search, Navigation, Briefcase, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { analytics } from '@/lib/analytics';
 
 interface Tab {
   path: string;
@@ -37,7 +38,7 @@ export default function BottomTabs({ role }: { role: 'shipper' | 'driver' }) {
           return (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() => { analytics.tabNavigated({ tab: tab.label, role }); navigate(tab.path); }}
               className={cn(
                 'relative flex flex-1 flex-col items-center gap-0.5 py-2 pt-2.5 text-[11px] font-medium transition-colors',
                 isActive

@@ -7,12 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, User, Check, X, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import { analytics } from '@/lib/analytics';
 
 interface BidFormProps {
   loadId: string;
+  loadPrice?: number | null;
+  route?: string;
 }
 
-export function BidForm({ loadId }: BidFormProps) {
+export function BidForm({ loadId, loadPrice, route = '' }: BidFormProps) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState('');
@@ -39,6 +42,7 @@ export function BidForm({ loadId }: BidFormProps) {
   const handleSubmit = async () => {
     if (!amount || !user) return;
     if (!isVerified) {
+      analytics.bidUnverifiedAttempt({ load_id: loadId });
       toast.error('You must complete verification before bidding. Go to Settings → Verification Center.');
       return;
     }
@@ -51,12 +55,14 @@ export function BidForm({ loadId }: BidFormProps) {
         message: message || null,
       });
       if (error) throw error;
+      analytics.bidSubmitted({ load_id: loadId, amount: parseFloat(amount), has_note: !!message, route });
       toast.success('Bid submitted!');
       setAmount('');
       setMessage('');
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ['available-loads'] });
     } catch (err: any) {
+      analytics.apiError({ context: 'bid_submit', message: err.message });
       toast.error(err.message);
     } finally {
       setSubmitting(false);
@@ -72,7 +78,7 @@ export function BidForm({ loadId }: BidFormProps) {
       );
     }
     return (
-      <Button size="sm" variant="default" onClick={() => setShowForm(true)}>
+      <Button size="sm" variant="default" onClick={() => { analytics.bidFormOpened({ load_id: loadId, load_price: loadPrice ?? null, route }); setShowForm(true); }}>
         <DollarSign className="mr-1.5 h-3.5 w-3.5" /> Place Bid
       </Button>
     );
@@ -106,10 +112,11 @@ export function BidForm({ loadId }: BidFormProps) {
 
 interface BidListProps {
   loadId: string;
+  loadPrice?: number | null;
   onAcceptBid: (bidId: string, driverId: string, amount: number) => void;
 }
 
-export function BidList({ loadId, onAcceptBid }: BidListProps) {
+export function BidList({ loadId, loadPrice, onAcceptBid }: BidListProps) {
   const { data: bids, isLoading } = useQuery({
     queryKey: ['load-bids', loadId],
     queryFn: async () => {
@@ -192,7 +199,11 @@ export function BidList({ loadId, onAcceptBid }: BidListProps) {
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-sm font-semibold tabular-nums">${Number(bid.amount).toFixed(2)}</span>
               {bid.status === 'pending' && (
-                <Button size="sm" variant="default" onClick={(e) => { e.stopPropagation(); onAcceptBid(bid.id, bid.driver_id, Number(bid.amount)); }}>
+                <Button size="sm" variant="default" onClick={(e) => {
+                  e.stopPropagation();
+                  analytics.bidAccepted({ bid_id: bid.id, load_id: loadId, bid_amount: Number(bid.amount), load_price: loadPrice ?? 0, driver_id: bid.driver_id });
+                  onAcceptBid(bid.id, bid.driver_id, Number(bid.amount));
+                }}>
                   Accept
                 </Button>
               )}

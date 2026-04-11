@@ -5,6 +5,7 @@ import { ArrowLeft, Send, Sparkles, Truck, Package, HelpCircle, TrendingUp, Sear
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
+import { analytics } from '@/lib/analytics';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -136,13 +137,23 @@ export default function HauliqAIChatbot() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (open) {
+      analytics.aiChatbotOpened({ role });
+    } else if (messages.length > 0) {
+      analytics.aiChatbotClosed({ message_count: messages.length, role });
+    }
+  }, [open]);
+
   const greeting = role === 'driver'
     ? `Hey ${profile?.full_name?.split(' ')[0] || 'driver'}! I can help you find loads, bid smarter, and navigate SADC corridors. What do you need?`
     : `Hi ${profile?.full_name?.split(' ')[0] || 'there'}! I can help you post loads, review bids, and get market pricing. How can I help?`;
 
-  const handleSend = useCallback(async (text?: string) => {
+  const handleSend = useCallback(async (text?: string, isSuggestion = false) => {
     const msgText = text || input.trim();
     if (!msgText || loading) return;
+
+    analytics.aiChatbotMessageSent({ role, message_count: messages.length + 1, is_suggestion: isSuggestion });
 
     const userMsg: Message = { role: 'user', content: msgText };
     const newMessages = [...messages, userMsg];
@@ -310,7 +321,10 @@ export default function HauliqAIChatbot() {
                   {suggestions.map((s) => (
                     <button
                       key={s.label}
-                      onClick={() => handleSend(s.message)}
+                      onClick={() => {
+                        analytics.aiChatbotSuggestionClicked({ suggestion_label: s.label, role });
+                        handleSend(s.message, true);
+                      }}
                       className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-xs text-foreground hover:bg-muted/80 transition-colors text-left"
                     >
                       <s.icon className="h-3.5 w-3.5 text-primary shrink-0" />

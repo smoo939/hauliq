@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 
 interface Props {
   loadId: string;
 }
 
 export default function LoadChat({ loadId }: Props) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    analytics.chatOpened({ load_id: loadId, role: profile?.role ?? 'unknown' });
+  }, [loadId]);
 
   const { data: messages, refetch } = useQuery({
     queryKey: ['load-messages', loadId],
@@ -39,6 +44,7 @@ export default function LoadChat({ loadId }: Props) {
         content: message.trim(),
       });
       if (error) throw error;
+      analytics.messageSent({ load_id: loadId, role: profile?.role ?? 'unknown' });
       setMessage('');
       refetch();
     } finally {

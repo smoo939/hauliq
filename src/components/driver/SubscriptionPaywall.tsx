@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Lock, Sparkles, CheckCircle, Rocket } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { analytics } from '@/lib/analytics';
 
 interface SubscriptionPaywallProps {
   open: boolean;
@@ -8,6 +11,14 @@ interface SubscriptionPaywallProps {
 }
 
 export default function SubscriptionPaywall({ open, onClose }: SubscriptionPaywallProps) {
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    if (open) {
+      analytics.paywallViewed({ role: profile?.role });
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm mx-auto">

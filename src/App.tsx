@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import RoleSelectPage from "./pages/RoleSelectPage";
@@ -16,6 +17,24 @@ import HauliqAIChatbot from "./components/HauliqAIChatbot";
 
 const queryClient = new QueryClient();
 
+function AppRoutes() {
+  usePageTracking();
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/role-select" element={<RoleSelectPage />} />
+        <Route path="/shipper/*" element={<ShipperDashboard />} />
+        <Route path="/driver/*" element={<DriverDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <HauliqAIChatbot />
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -24,16 +43,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/role-select" element={<RoleSelectPage />} />
-              <Route path="/shipper/*" element={<ShipperDashboard />} />
-              <Route path="/driver/*" element={<DriverDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <HauliqAIChatbot />
+            <AppRoutes />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

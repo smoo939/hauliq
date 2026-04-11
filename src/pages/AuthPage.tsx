@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { lovable } from '@/integrations/lovable/index';
 import { Separator } from '@/components/ui/separator';
+import { analytics } from '@/lib/analytics';
 
 export default function AuthPage() {
   const { user, signIn, signUp } = useAuth();
@@ -44,12 +45,15 @@ export default function AuthPage() {
       }
       if (isSignUp) {
         await signUp(email, password, fullName, phone);
+        analytics.signUp({ method: 'email', has_phone: !!phone });
         toast.success('Account created! Check your email to confirm.');
       } else {
         await signIn(email, password);
+        analytics.signIn({ method: 'email' });
         toast.success('Welcome back!');
       }
     } catch (err: any) {
+      analytics.apiError({ context: isSignUp ? 'sign_up' : 'sign_in', message: err.message });
       toast.error(err.message);
     } finally {
       setLoading(false);
@@ -135,6 +139,7 @@ export default function AuthPage() {
               className="w-full"
               size="lg"
               onClick={async () => {
+                analytics.signIn({ method: 'google' });
                 const { error } = await lovable.auth.signInWithOAuth('google', {
                   redirect_uri: window.location.origin,
                 });
