@@ -38,6 +38,13 @@ Supabase Edge Function secrets (set in Supabase dashboard):
 - `CONTIPAY_TEST_KEY` / `CONTIPAY_API_KEY` — ContiPay payment keys
 - `CONTIPAY_API_SECRET` — ContiPay secret
 
+## Analytics
+PostHog telemetry is integrated via `posthog-js`:
+- **Initialization**: `src/main.tsx` — token `phc_xQs2PnMkPq8MYcf3Rvs2Xt3JGiWn9h9uN3HC9A9F5hMs`, host `https://us.i.posthog.com`, `person_profiles: "identified_only"`
+- **User identification**: `src/hooks/useAuth.tsx` — calls `posthog.identify()` with userId, email, name, role, phone, verified after login
+- **Sign-out**: calls `posthog.reset()` to clear the identity
+- **Role selection**: captures `role_selected` event when a user picks shipper/driver
+
 ## Dev Server
 - Runs on port 5000 (`npm run dev`)
 - Workflow: "Start application"

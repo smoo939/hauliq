@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import posthog from 'posthog-js';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
@@ -34,13 +35,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userEmail?: string) => {
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
       .single();
     setProfile(data as Profile | null);
+    if (data) {
+      posthog.identify(userId, {
+        ...(userEmail ? { email: userEmail } : {}),
+        name: data.full_name ?? undefined,
+        role: data.role ?? undefined,
+        phone: data.phone ?? undefined,
+        verified: data.verified ?? false,
+      });
+    }
   };
 
   const refreshProfile = async () => {
@@ -53,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => fetchProfile(session.user.id, session.user.email), 0);
         } else {
           setProfile(null);
         }
@@ -65,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       }
       setLoading(false);
     });
@@ -93,13 +103,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    posthog.reset();
   };
 
   const setRole = async (role: 'shipper' | 'driver') => {
     if (!user) throw new Error('Not authenticated');
     await supabase.from('profiles').update({ role }).eq('user_id', user.id);
     await supabase.from('user_roles').upsert({ user_id: user.id, role });
-    await fetchProfile(user.id);
+    await fetchProfile(user.id, user.email);
+    posthog.capture('role_selected', { role });
   };
 
   return (
