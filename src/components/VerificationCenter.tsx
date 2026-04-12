@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { analytics } from '@/lib/analytics';
 
 type DocType = 'drivers_license' | 'national_id' | 'selfie' | 'registration' | 'insurance' | 'truck_photo';
 type VerifStep = 'overview' | 'driver_license' | 'driver_id' | 'driver_selfie' | 'truck_reg' | 'truck_insurance' | 'truck_photo';
@@ -211,6 +212,15 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
   const [step, setStep] = useState<VerifStep>('overview');
   const [crossMatchLoading, setCrossMatchLoading] = useState(false);
 
+  useEffect(() => {
+    analytics.verificationCenterOpened();
+  }, []);
+
+  const goToStep = (s: VerifStep) => {
+    if (s !== 'overview') analytics.verificationStepStarted({ step: s });
+    setStep(s);
+  };
+
   const { data: driverVerif, isLoading: loadingDV } = useQuery({
     queryKey: ['driver-verification', user?.id],
     queryFn: async () => {
@@ -255,6 +265,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
 
   const handleDriverDocComplete = async (docField: string, urlField: string, extracted: any, fileUrl: string) => {
     if (!user) return;
+    analytics.documentUploaded({ doc_type: docField, success: true });
     await ensureDriverVerif();
     const update: any = { [urlField]: fileUrl, updated_at: new Date().toISOString() };
 
@@ -282,11 +293,12 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
 
     await supabase.from('driver_verifications').update(update).eq('user_id', user.id);
     queryClient.invalidateQueries({ queryKey: ['driver-verification'] });
-    setStep('overview');
+    goToStep('overview');
   };
 
   const handleTruckDocComplete = async (docField: string, urlField: string, extracted: any, fileUrl: string) => {
     if (!user || !activeTruck) return;
+    analytics.documentUploaded({ doc_type: docField, success: true });
     const update: any = { [urlField]: fileUrl, updated_at: new Date().toISOString() };
 
     if (docField === 'registration') {
@@ -308,10 +320,11 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
 
     await supabase.from('truck_verifications').update(update).eq('id', activeTruck.id);
     queryClient.invalidateQueries({ queryKey: ['truck-verifications'] });
-    setStep('overview');
+    goToStep('overview');
   };
 
   const runCrossMatch = async () => {
+    analytics.verificationSubmitted({ entity_type: 'driver' });
     setCrossMatchLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('verify-document', {
@@ -347,6 +360,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
   };
 
   const requestManualReview = async (entityType: 'driver' | 'truck') => {
+    analytics.manualReviewRequested({ entity_type: entityType });
     try {
       const { data, error } = await supabase.functions.invoke('verify-document', {
         body: {
@@ -392,7 +406,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
         ]}
         docType="drivers_license"
         accept="image/*"
-        onBack={() => setStep('overview')}
+        onBack={() => goToStep('overview')}
         onComplete={(ext, url) => handleDriverDocComplete('license', 'license_url', ext, url)}
       />
     );
@@ -408,7 +422,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
         ]}
         docType="national_id"
         accept="image/*"
-        onBack={() => setStep('overview')}
+        onBack={() => goToStep('overview')}
         onComplete={(ext, url) => handleDriverDocComplete('id', 'national_id_url', ext, url)}
       />
     );
@@ -426,7 +440,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
         docType="selfie"
         accept="image/*"
         isCamera
-        onBack={() => setStep('overview')}
+        onBack={() => goToStep('overview')}
         onComplete={(ext, url) => handleDriverDocComplete('selfie', 'selfie_url', ext, url)}
       />
     );
@@ -442,7 +456,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
         ]}
         docType="registration"
         accept="image/*"
-        onBack={async () => { await ensureTruckVerif(); setStep('overview'); }}
+        onBack={async () => { await ensureTruckVerif(); goToStep('overview'); }}
         onComplete={(ext, url) => handleTruckDocComplete('registration', 'registration_url', ext, url)}
       />
     );
@@ -459,7 +473,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
         ]}
         docType="insurance"
         accept="image/*"
-        onBack={() => setStep('overview')}
+        onBack={() => goToStep('overview')}
         onComplete={(ext, url) => handleTruckDocComplete('insurance', 'insurance_url', ext, url)}
       />
     );
@@ -475,7 +489,7 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
         ]}
         docType="truck_photo"
         accept="image/*"
-        onBack={() => setStep('overview')}
+        onBack={() => goToStep('overview')}
         onComplete={(ext, url) => handleTruckDocComplete('photo', 'truck_photo_url', ext, url)}
       />
     );
@@ -519,21 +533,21 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
             description={driverVerif?.license_number || 'Upload your valid license'}
             icon={FileText}
             status={driverVerif?.license_status || 'pending'}
-            onClick={() => { ensureDriverVerif(); setStep('driver_license'); }}
+            onClick={() => { ensureDriverVerif(); goToStep('driver_license'); }}
           />
           <DocUploadCard
             title="National ID / Passport"
             description={driverVerif?.national_id_number || 'Upload your ID document'}
             icon={Shield}
             status={driverVerif?.id_status || 'pending'}
-            onClick={() => { ensureDriverVerif(); setStep('driver_id'); }}
+            onClick={() => { ensureDriverVerif(); goToStep('driver_id'); }}
           />
           <DocUploadCard
             title="Live Selfie"
             description="Liveness check with front camera"
             icon={Camera}
             status={driverVerif?.selfie_status || 'pending'}
-            onClick={() => { ensureDriverVerif(); setStep('driver_selfie'); }}
+            onClick={() => { ensureDriverVerif(); goToStep('driver_selfie'); }}
           />
         </div>
       </div>
@@ -549,21 +563,21 @@ export default function VerificationCenter({ onBack }: { onBack?: () => void }) 
             description={activeTruck?.registration_number || 'Upload registration'}
             icon={FileText}
             status={activeTruck?.reg_status || 'pending'}
-            onClick={async () => { await ensureTruckVerif(); setStep('truck_reg'); }}
+            onClick={async () => { await ensureTruckVerif(); goToStep('truck_reg'); }}
           />
           <DocUploadCard
             title="Insurance Certificate"
             description={activeTruck?.insurance_number || 'Upload insurance'}
             icon={Shield}
             status={activeTruck?.insurance_status || 'pending'}
-            onClick={async () => { await ensureTruckVerif(); setStep('truck_insurance'); }}
+            onClick={async () => { await ensureTruckVerif(); goToStep('truck_insurance'); }}
           />
           <DocUploadCard
             title="Truck Photo (with Plate)"
             description="Show truck and visible plate"
             icon={Camera}
             status={activeTruck?.photo_status || 'pending'}
-            onClick={async () => { await ensureTruckVerif(); setStep('truck_photo'); }}
+            onClick={async () => { await ensureTruckVerif(); goToStep('truck_photo'); }}
           />
         </div>
       </div>

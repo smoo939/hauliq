@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MapPin, ChevronUp, ChevronDown, Package, MessageCircle, XCircle, Navigation, Clock } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 import AppSidebar from '@/components/AppSidebar';
 import { motion } from 'framer-motion';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -320,6 +321,7 @@ export default function ShipperLiveView() {
                     <p className="text-sm font-semibold">Carrier Bids</p>
                     <BidList
                       loadId={selectedLoad.id}
+                      loadPrice={selectedLoad.price}
                       onAcceptBid={(bidId, driverId, amount) =>
                         acceptBid.mutate({ bidId, driverId, amount, loadId: selectedLoad.id })
                       }
@@ -344,6 +346,7 @@ export default function ShipperLiveView() {
                   {selectedLoad.status === 'posted' && (
                     <Button variant="destructive" className="flex-1 h-10 text-sm"
                       onClick={async () => {
+                        analytics.loadCancelled({ load_id: selectedLoad.id, status: selectedLoad.status });
                         await supabase.from('loads').update({ status: 'cancelled' }).eq('id', selectedLoad.id);
                         queryClient.invalidateQueries({ queryKey: ['shipper-live-loads'] });
                         setSelectedLoad(null);

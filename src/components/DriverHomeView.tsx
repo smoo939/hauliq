@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Search, Sparkles, Flame, ChevronUp, ChevronDown } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 import { SubscriptionBadge } from '@/components/driver/SubscriptionPaywall';
 import { motion } from 'framer-motion';
 import LoadCard from '@/components/driver/LoadCard';
@@ -113,6 +114,17 @@ export default function DriverHomeView() {
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null);
   const [sheetHeight, setSheetHeight] = useState(SNAP_HALF);
   const [searchQuery, setSearchQuery] = useState('');
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (query.trim().length >= 2) {
+      searchDebounceRef.current = setTimeout(() => {
+        analytics.loadSearched({ query: query.trim(), role: 'driver' });
+      }, 800);
+    }
+  };
 
   // Driver location
   useEffect(() => {
@@ -229,6 +241,13 @@ export default function DriverHomeView() {
   };
 
   const handleSelectLoad = (load: any, score?: number) => {
+    analytics.loadDetailViewed({
+      load_id: load.id,
+      route: `${load.pickup_location} → ${load.delivery_location}`,
+      price: load.price,
+      equipment_type: load.equipment_type,
+      is_urgent: !!load.urgent,
+    });
     setSelectedLoad(load);
     setSelectedMatchScore(score);
   };
@@ -284,7 +303,7 @@ export default function DriverHomeView() {
             <Input
               placeholder="Search loads, locations..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="border-0 bg-transparent h-7 text-xs p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60"
             />
           </div>
@@ -295,7 +314,7 @@ export default function DriverHomeView() {
             </span>
             <Switch
               checked={online}
-              onCheckedChange={setOnline}
+              onCheckedChange={(v) => { analytics.driverOnlineToggled({ is_online: v }); setOnline(v); }}
               className="h-4 w-7 data-[state=checked]:bg-green-500"
             />
           </div>
