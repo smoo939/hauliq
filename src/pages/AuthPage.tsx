@@ -46,7 +46,7 @@ export default function AuthPage() {
       if (isSignUp) {
         await signUp(email, password, fullName, phone);
         analytics.signUp({ method: 'email', has_phone: !!phone });
-        toast.success('Account created! Check your email to confirm.');
+        toast.success('Account created! Welcome to Hauliq.');
       } else {
         await signIn(email, password);
         analytics.signIn({ method: 'email' });
